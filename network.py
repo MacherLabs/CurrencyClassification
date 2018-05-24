@@ -125,7 +125,7 @@ class Train_Network(object):
         batch_size = 32
 
         save_path ='./training2/model.ckpt'
-        log_path ='./training2'
+        log_path ='./training2/'
 
         learning_rate = 1e-5
 
@@ -255,5 +255,6 @@ class Test_graph(object):
 
 
 if __name__ == '__main__':
-    path = './dataset/fifty/84.jpg'
-    Test_graph().predict_currency(path)
+    network = Train_Network()
+    network.create_network()
+    network.train_network()
