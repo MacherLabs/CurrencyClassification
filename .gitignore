@@ -1,0 +1,5 @@
+./dataset
+./currency_dataset.zip
+./training/model.ckpt-1000.data-00000-of-00001
+./training/model.ckpt-1000.meta
+./training/model.ckpt-1000.index
