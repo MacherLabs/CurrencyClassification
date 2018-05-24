@@ -3,7 +3,7 @@ import numpy.random as random
 
 directories =['ten','twenty','fifty','hundred','fivehundred','thousand']
 
-MAIN_PATH ='./dataset/'
+MAIN_PATH = './dataset/'
 
 f =open('/home/pranav/PycharmProjects/Note_classifier/train_data.txt','w')
 i = 0

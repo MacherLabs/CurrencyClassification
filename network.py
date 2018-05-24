@@ -20,9 +20,9 @@ class Train_Network(object):
 
         no_filter1 = 64
         no_filter2 = 64
-        no_filter3 = 32
-        no_filter4 = 16
-        no_filter5 = 16
+        no_filter3 = 64
+        no_filter4 = 64
+        no_filter5 = 64
 
 
 
@@ -122,7 +122,7 @@ class Train_Network(object):
         beta1 =0.9
         beta2 = 0.99
         epochs = 100
-        batch_size = 32
+        batch_size = 8
 
         save_path ='./training2/model.ckpt'
         log_path ='./training2/'
@@ -149,12 +149,11 @@ class Train_Network(object):
             sess.run(init)
 
             for epoch in range (epochs):
-
+                
                 previous_batch = 0
-                total_sum = 0
-                print(("Epoch no : " +str(epoch)))
                 # Do our mini batches:
                 for batch in range(no_of_batches):
+                    print("epoch no: " +str(epoch))
                     current_batch = previous_batch + batch_size
                     x_batch = x_train[previous_batch:current_batch]
 
@@ -162,35 +161,16 @@ class Train_Network(object):
                     previous_batch = previous_batch + batch_size
                     print(x_batch.shape, current_batch - previous_batch)
 
-                    _, loss, batch_sum = sess.run([optimizer, self.cost, self.sum],
+                    _, loss = sess.run([optimizer, self.cost],
                                                   feed_dict={self.x: x_batch, self.y: y_batch})
 
-                    print("Epoch: "+str(epoch),"Loss: " + str(loss))
-                    total_sum = total_sum + batch_sum
+                    print("Loss: " + str(loss))
                 if(epoch % 10==0):
                         saver.save(sess, save_path, global_step=epoch)
-                if (epoch % 100 == 0):
-                   accuracy = tf.reduce_mean(total_sum)
-                   print("Train Accuracy " + str(accuracy * 100))
                 learning_rate = 1e-5/(epoch * epoch + 1)
 
 
-            no_of_test_examples = sess.run(tf.shape(x_test)[0])
-            no_of_test_batches =  int(no_of_test_examples / batch_size)
-            sum =0
-            previous_batch =0
-            for batch in range(no_of_test_batches):
-                current_batch = previous_batch + batch_size
-                x_batch = x_test[previous_batch:current_batch]
 
-                y_batch = y_test[previous_batch:current_batch]
-                previous_batch = previous_batch + batch_size
-                temp_sum = sess.run([self.sum],feed_dict={self.x:x_batch,self.y:y_batch})
-                sum = sum + temp_sum
-
-            accuracy = sum/no_of_test_examples
-            print("accuracy during on the test set")
-            print(accuracy*100)
 
 
 
