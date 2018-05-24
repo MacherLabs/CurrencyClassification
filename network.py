@@ -9,8 +9,7 @@ import  cv2
 class Train_Network(object):
 
     def __init__(self):
-        ### image tensor to be added later
-        self.img_size = 256  ##### to be added later
+        self.img_size = 256
         self.num_classes = 6
         ####add sizes and numbers  to filters
         size_filter1 = 5
@@ -40,7 +39,7 @@ class Train_Network(object):
         self.x = tf.placeholder(dtype=tf.float32,name='x',shape=[None,self.img_size,self.img_size,3])
         self.y = tf.placeholder(dtype=tf.float32,name='y',shape=[None,self.num_classes])
 
-    #### need help in this section ####
+
     def get_images(self,path):
 
        x, y = image_preloader(path, mode='file', image_shape=(self.img_size, self.img_size),
@@ -229,7 +228,6 @@ class Test_graph(object):
 
     
 
-    ################ to be completed later    #####################
     def predict_accuracy(self):
         path = './test_data.txt'
         x_test, y_test = image_preloader(path, mode='file', image_shape=(256, 256),
