@@ -82,7 +82,7 @@ class Train_Network(object):
         ## layer4 ##
         conv4 = tf.nn.conv2d(input=pool3, filter=self.filter4, strides=[1, 1, 1, 1], padding="SAME",
                              name="conv4")
-        relu4 = tf.nn.relu(conv1, name="relu4")
+        relu4 = tf.nn.relu(conv4, name="relu4")
 
         drop4 = tf.nn.dropout(relu4, keep_prob=0.7)
         pool4 = tf.nn.max_pool(drop4, ksize=ksize, strides=[1, 2, 2, 1], padding='VALID', name='pool4')  ##add ksize
