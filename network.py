@@ -21,8 +21,8 @@ class Train_Network(object):
         no_filter1 = 64
         no_filter2 = 64
         no_filter3 = 64
-        no_filter4 = 64
-        no_filter5 = 64
+        no_filter4 = 16
+        no_filter5 = 16
 
 
 
@@ -121,7 +121,7 @@ class Train_Network(object):
         #########    hyperparameters    ########
         beta1 =0.9
         beta2 = 0.99
-        epochs = 100
+        epochs = 200
         batch_size = 8
 
         save_path ='./training2/model.ckpt'
@@ -138,8 +138,9 @@ class Train_Network(object):
 
         saver = tf.train.Saver()
         init = tf.global_variables_initializer()
-
-        with tf.Session() as sess:
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        with tf.Session(config=config) as sess:
             no_of_train_examples = sess.run(tf.shape(x_train)[0])
             print("no of train examples")
             print(no_of_train_examples)
