@@ -192,8 +192,8 @@ class Train_Network(object):
 
 
 
-        self.train_path ='./currency_train.tfrecords'
-        self.test_path= './currency_test.tfrecords'
+        self.train_path ='./train_data.txt'
+        self.test_path= './test_data.txt'
 
         self.filter1 = tf.get_variable("filter1",shape=[size_filter1 , size_filter1, 3 ,no_filter1],dtype=tf.float32,initializer=tf.contrib.layers.xavier_initializer())
         self.filter2 = tf.get_variable("filter2",shape=[size_filter2, size_filter2, no_filter1, no_filter2],dtype=tf.float32,initializer=tf.contrib.layers.xavier_initializer())
@@ -281,9 +281,9 @@ class Train_Network(object):
 
     def train_network(self):
 
-        read_tfRecord = Read_tf_record()
-        #x_train,y_train = self.get_images(self.train_path)
-        #x_test,y_test = self.get_images(self.test_path)
+        #read_tfRecord = Read_tf_record()
+        x_train,y_train = self.get_images(self.train_path)
+        x_test,y_test = self.get_images(self.test_path)
 
         #########    hyperparameters    ########
         beta1 =0.9
@@ -310,16 +310,17 @@ class Train_Network(object):
         with tf.Session() as sess:
             #saver = tf.train.import_meta_graph('./training2/model.ckpt-110')
             #saver.restore(sess, tf.train.latest_checkpoint('./training2/'))
-            no_of_train_examples =1000
-            no_of_test_examples = 10
+            no_of_train_examples = sess.run(tf.shape(x_train)[0])
+            no_of_test_examples = sess.run(tf.shape(x_test)[0])
 
             print("no of train examples")
             print(no_of_train_examples)
+
             no_of_train_batches = int(no_of_train_examples / batch_size)
             no_of_test_batches =int(no_of_test_examples / batch_size)
             writer = tf.summary.FileWriter(log_path, sess.graph)
             sess.run(init)
-            for epoch in range (111,epochs+1):
+            for epoch in range (epochs+1):
 
                 previous_train_batch = 0
                 previous_test_batch = 0
@@ -328,13 +329,19 @@ class Train_Network(object):
                 # Do our mini batches:
                 for batch in range(no_of_train_batches):
                     print("epoch no: " + str(epoch))
-                    x_train_batch,y_train_batch = read_tfRecord.input_fn(filenames=self.train_path,batch_size=batch_size,train=True)
-                    print(sess.run(x_train_batch))
+                    current_train_batch = previous_train_batch + batch_size
+                    x_train_batch = x_train[previous_train_batch:current_train_batch]
+
+                    y_train_batch = y_train[previous_train_batch:current_train_batch]
+
+                    previous_train_batch = previous_train_batch + batch_size
+                    print(x_train_batch.shape)
                     _, loss = sess.run([optimizer, self.cost],
                                        feed_dict={self.x: x_train_batch, self.y: y_train_batch})
                     sum = sess.run(self.sum, feed_dict={self.x: x_train_batch, self.y: y_train_batch})
                     total_train_sum = total_train_sum + sum
                     print("Loss: " + str(loss))
+                    
                 if (epoch % 20 == 0):
                     saver.save(sess, save_path, global_step=epoch)
                     for batch in range(no_of_test_batches):
