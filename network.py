@@ -183,12 +183,15 @@ class Train_Network(object):
         size_filter3 = 3
         size_filter4 = 3
         size_filter5 = 3
+        size_filter6 = 3
+
 
         no_filter1 = 64
-        no_filter2 = 64
+        no_filter2 = 32
         no_filter3 = 32
-        no_filter4 = 32
+        no_filter4 = 16
         no_filter5 = 16
+        no_filter6 = 8
 
 
 
@@ -200,6 +203,7 @@ class Train_Network(object):
         self.filter3 = tf.get_variable("filter3", shape=[size_filter3, size_filter3, no_filter2, no_filter3], dtype=tf.float32,initializer=tf.contrib.layers.xavier_initializer())
         self.filter4 = tf.get_variable("filter4", shape=[size_filter4, size_filter4, no_filter3, no_filter4], dtype=tf.float32,initializer=tf.contrib.layers.xavier_initializer())
         self.filter5 = tf.get_variable("filter5", shape=[size_filter5, size_filter5, no_filter4, no_filter5], dtype=tf.float32,initializer=tf.contrib.layers.xavier_initializer())
+        self.filter6 = tf.get_variable("filter6", shape=[size_filter6, size_filter6, no_filter5, no_filter6], dtype=tf.float32,initializer=tf.contrib.layers.xavier_initializer())
 
 
         self.x = tf.placeholder(dtype=tf.float32,name='x',shape=[None,self.img_size,self.img_size,3])
@@ -225,7 +229,7 @@ class Train_Network(object):
         conv1 = tf.nn.conv2d(input=self.x,filter =self.filter1,strides= [1,1,1,1],
                              padding="SAME",name = "conv1")
         relu1 = tf.nn.relu(conv1,name="relu1")
-        drop1 = tf.nn.dropout(relu1,keep_prob=1)
+        drop1 = tf.nn.dropout(relu1,keep_prob=0.7)
         pool1 = tf.nn.max_pool(drop1,ksize = ksize ,strides = [1,2,2,1],padding = 'VALID',name='pool1') ##add ksize
 
 
@@ -234,7 +238,7 @@ class Train_Network(object):
                              name="conv2")
         relu2 = tf.nn.relu(conv2, name="relu2")
 
-        drop2 = tf.nn.dropout(relu2, keep_prob=1)
+        drop2 = tf.nn.dropout(relu2, keep_prob=0.7)
         pool2 = tf.nn.max_pool(drop2, ksize=ksize, strides=[1, 2, 2, 1], padding='VALID', name='pool2')  ##add ksize
 
         ## layer3 ##
@@ -242,7 +246,7 @@ class Train_Network(object):
                              name="conv3")
         relu3 = tf.nn.relu(conv3, name="relu3")
 
-        drop3 = tf.nn.dropout(relu3, keep_prob=1)
+        drop3 = tf.nn.dropout(relu3, keep_prob=0.7)
         pool3 = tf.nn.max_pool(drop3, ksize=ksize, strides=[1, 2, 2, 1], padding='VALID', name='pool3')  ##add ksize
 
         ## layer4 ##
@@ -250,7 +254,7 @@ class Train_Network(object):
                              name="conv4")
         relu4 = tf.nn.relu(conv4, name="relu4")
 
-        drop4 = tf.nn.dropout(relu4, keep_prob=1)
+        drop4 = tf.nn.dropout(relu4, keep_prob=0.7)
         pool4 = tf.nn.max_pool(drop4, ksize=ksize, strides=[1, 2, 2, 1], padding='VALID', name='pool4')  ##add ksize
 
         ## layer5 ##
@@ -258,20 +262,36 @@ class Train_Network(object):
                              name="conv5")
         relu5 = tf.nn.relu(conv5, name="relu5")
 
-        drop5 = tf.nn.dropout(relu5, keep_prob=1)
+        drop5 = tf.nn.dropout(relu5, keep_prob=0.7)
         pool5 = tf.nn.max_pool(drop5, ksize=ksize, strides=[1, 2, 2, 1], padding='VALID', name='pool5')  ##add ksize
 
+        ## layer6 ##
+        conv6 = tf.nn.conv2d(input=pool5, filter=self.filter6, strides=[1, 1, 1, 1], padding="SAME",
+                         name="conv6")
 
+        relu6 = tf.nn.relu(conv6, name="relu6")
+
+        drop6 = tf.nn.dropout(relu6, keep_prob=0.7)
+        pool6 = tf.nn.max_pool(drop6, ksize=ksize, strides=[1, 2, 2, 1], padding='VALID', name='pool6')
 
         ##############  fully connected layers   #################
 
-        fc1 = tf.layers.flatten(pool5,name='fc1')
+        fc1 = tf.layers.flatten(pool6,name='fc1')
 
-        self.W1 = tf.get_variable(dtype=tf.float32,name="W1",shape=[fc1.get_shape().as_list()[1] ,self.num_classes],initializer=tf.contrib.layers.xavier_initializer())  ##########  outputs ##########
+        self.W1 = tf.get_variable(dtype=tf.float32,name="W1",shape=[fc1.get_shape().as_list()[1] ,25],initializer=tf.contrib.layers.xavier_initializer())
 
         Z1 = tf.matmul(fc1,self.W1)
+        drop_fc1 = tf.nn.dropout(keep_prob=0.4,name='drop_fc1')
+        fc2 = tf.nn.relu(drop_fc1,name='fc2')
 
-        self.y_predicted = tf.nn.softmax(Z1,name='y_predicted')
+        self.W2 = tf.get_variable(dtype=tf.float32, name="W2", shape=[fc2.get_shape().as_list()[1], self.num_classes],
+                              initializer=tf.contrib.layers.xavier_initializer())  ##########  outputs ##########
+
+        Z2 = tf.matmul(fc2, self.W2)
+
+        ##########  outputs ##########
+
+        self.y_predicted = tf.nn.softmax(Z2,name='y_predicted')
 
 
 
@@ -288,7 +308,7 @@ class Train_Network(object):
         #########    hyperparameters    ########
         beta1 =0.9
         beta2 = 0.99
-        epochs = 1000
+        epochs = 1500
         batch_size = 1
 
         save_path ='./training3/model.ckpt'

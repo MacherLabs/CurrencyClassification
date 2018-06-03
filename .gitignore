@@ -6,3 +6,4 @@ val.tfrecord
 train.tfrecord
 mobilenet_v1_100_224/
 mobileNetv2/
+idea/
