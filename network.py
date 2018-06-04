@@ -101,7 +101,7 @@ class Read_tf_record(object):
         # TFRecords file instead.
         features = \
             {
-                'image': tf.FixedLenFeature([], tf.int64),
+                'image': tf.FixedLenFeature([], tf.string),
                 'label': tf.FixedLenFeature([], tf.int64)
             }
 
@@ -113,63 +113,25 @@ class Read_tf_record(object):
         image_raw = parsed_example['image']
 
         # Decode the raw bytes so it becomes a tensor with type.
+        #image = tf.image.decode_image(image_raw, channels=3)
+
         image = tf.decode_raw(image_raw, tf.uint8)
 
         # The type is now uint8 but we need it to be float.
-        image = tf.cast(image, tf.float32)
-
+        #image = tf.cast(image, tf.float32)
         # Get the label associated with the image.
         label = parsed_example['label']
 
         # The image and label are now correct TensorFlow types.
         return image, label
 
-    def input_fn(self,filenames, train, batch_size=32, buffer_size=2048):
-            # Args:
-            # filenames:   Filenames for the TFRecords files.
-            # train:       Boolean whether training (True) or testing (False).
-            # batch_size:  Return batches of this size.
-            # buffer_size: Read buffers of this size. The random shuffling
-            #              is done on the buffer, so it must be big enough.
+    def input_fn(self,filenames, batch_size, buffer_size=2048):
+        dataset = tf.data.TFRecordDataset(filenames)
+        dataset = dataset.map(Read_tf_record().parse)
+        dataset = dataset.batch(batch_size)
+        iterator = dataset.make_initializable_iterator()
+        return(iterator)
 
-            # Create a TensorFlow Dataset-object which has functionality
-            # for reading and shuffling data from TFRecords files.
-            dataset = tf.data.TFRecordDataset(filenames=filenames)
-
-            # Parse the serialized data in the TFRecords files.
-            # This returns TensorFlow tensors for the image and labels.
-            dataset = dataset.map(self.parse)
-
-            if train:
-                # If training then read a buffer of the given size and
-                # randomly shuffle it.
-                dataset = dataset.shuffle(buffer_size=buffer_size)
-
-                # Allow infinite reading of the data.
-                num_repeat = None
-            else:
-                # If testing then don't shuffle the data.
-
-                # Only go through the data once.
-                num_repeat = 1
-
-            # Repeat the dataset the given number of times.
-            dataset = dataset.repeat(num_repeat)
-
-            # Get a batch of data with the given size.
-            dataset = dataset.batch(batch_size)
-
-            # Create an iterator for the dataset and the above modifications.
-            iterator = dataset.make_one_shot_iterator()
-
-            # Get the next batch of images and labels.
-            images_batch, labels_batch = iterator.get_next()
-
-            # The input-function must return a dict wrapping the images.
-            x = {'image': images_batch}
-            y = labels_batch
-
-            return x, y
 
 
 class Train_Network(object):
@@ -195,8 +157,9 @@ class Train_Network(object):
 
 
 
-        self.train_path ='./train_data.txt'
-        self.test_path= './test_data.txt'
+        self.train_path ='./train.tfrecord'
+        self.test_path= './test.tfrecord'
+        self.val_path = './val.tfrecord'
 
         self.filter1 = tf.get_variable("filter1",shape=[size_filter1 , size_filter1, 3 ,no_filter1],dtype=tf.float32,initializer=tf.contrib.layers.xavier_initializer())
         self.filter2 = tf.get_variable("filter2",shape=[size_filter2, size_filter2, no_filter1, no_filter2],dtype=tf.float32,initializer=tf.contrib.layers.xavier_initializer())
@@ -221,77 +184,76 @@ class Train_Network(object):
 
     def create_network(self):
 
-
-
+        with tf.variable_scope("ModelCNN"):
        ##############     CNN LAYERS #################
-        ksize = [1,3,3,1]
-        ## layer1 ##
-        conv1 = tf.nn.conv2d(input=self.x,filter =self.filter1,strides= [1,1,1,1],
-                             padding="SAME",name = "conv1")
-        relu1 = tf.nn.relu(conv1,name="relu1")
-        drop1 = tf.nn.dropout(relu1,keep_prob=0.7)
-        pool1 = tf.nn.max_pool(drop1,ksize = ksize ,strides = [1,2,2,1],padding = 'VALID',name='pool1') ##add ksize
+            ksize = [1,3,3,1]
+            ## layer1 ##
+            conv1 = tf.nn.conv2d(input=self.x,filter =self.filter1,strides= [1,1,1,1],
+                                 padding="SAME",name = "conv1")
+            relu1 = tf.nn.relu(conv1,name="relu1")
+            drop1 = tf.nn.dropout(relu1,keep_prob=0.7)
+            pool1 = tf.nn.max_pool(drop1,ksize = ksize ,strides = [1,2,2,1],padding = 'VALID',name='pool1') ##add ksize
 
 
-        ## layer2 ##
-        conv2 = tf.nn.conv2d(input=pool1, filter=self.filter2, strides=[1, 1, 1, 1], padding="SAME",
-                             name="conv2")
-        relu2 = tf.nn.relu(conv2, name="relu2")
+            ## layer2 ##
+            conv2 = tf.nn.conv2d(input=pool1, filter=self.filter2, strides=[1, 1, 1, 1], padding="SAME",
+                                 name="conv2")
+            relu2 = tf.nn.relu(conv2, name="relu2")
 
-        drop2 = tf.nn.dropout(relu2, keep_prob=0.7)
-        pool2 = tf.nn.max_pool(drop2, ksize=ksize, strides=[1, 2, 2, 1], padding='VALID', name='pool2')  ##add ksize
+            drop2 = tf.nn.dropout(relu2, keep_prob=0.7)
+            pool2 = tf.nn.max_pool(drop2, ksize=ksize, strides=[1, 2, 2, 1], padding='VALID', name='pool2')  ##add ksize
 
-        ## layer3 ##
-        conv3 = tf.nn.conv2d(input=pool2, filter=self.filter3, strides=[1, 1, 1, 1], padding="SAME",
-                             name="conv3")
-        relu3 = tf.nn.relu(conv3, name="relu3")
+            ## layer3 ##
+            conv3 = tf.nn.conv2d(input=pool2, filter=self.filter3, strides=[1, 1, 1, 1], padding="SAME",
+                                 name="conv3")
+            relu3 = tf.nn.relu(conv3, name="relu3")
 
-        drop3 = tf.nn.dropout(relu3, keep_prob=0.7)
-        pool3 = tf.nn.max_pool(drop3, ksize=ksize, strides=[1, 2, 2, 1], padding='VALID', name='pool3')  ##add ksize
+            drop3 = tf.nn.dropout(relu3, keep_prob=0.7)
+            pool3 = tf.nn.max_pool(drop3, ksize=ksize, strides=[1, 2, 2, 1], padding='VALID', name='pool3')  ##add ksize
 
-        ## layer4 ##
-        conv4 = tf.nn.conv2d(input=pool3, filter=self.filter4, strides=[1, 1, 1, 1], padding="SAME",
-                             name="conv4")
-        relu4 = tf.nn.relu(conv4, name="relu4")
+            ## layer4 ##
+            conv4 = tf.nn.conv2d(input=pool3, filter=self.filter4, strides=[1, 1, 1, 1], padding="SAME",
+                                 name="conv4")
+            relu4 = tf.nn.relu(conv4, name="relu4")
 
-        drop4 = tf.nn.dropout(relu4, keep_prob=0.7)
-        pool4 = tf.nn.max_pool(drop4, ksize=ksize, strides=[1, 2, 2, 1], padding='VALID', name='pool4')  ##add ksize
+            drop4 = tf.nn.dropout(relu4, keep_prob=0.7)
+            pool4 = tf.nn.max_pool(drop4, ksize=ksize, strides=[1, 2, 2, 1], padding='VALID', name='pool4')  ##add ksize
 
-        ## layer5 ##
-        conv5 = tf.nn.conv2d(input=pool4, filter=self.filter5, strides=[1, 1, 1, 1], padding="SAME",
-                             name="conv5")
-        relu5 = tf.nn.relu(conv5, name="relu5")
+            ## layer5 ##
+            conv5 = tf.nn.conv2d(input=pool4, filter=self.filter5, strides=[1, 1, 1, 1], padding="SAME",
+                                 name="conv5")
+            relu5 = tf.nn.relu(conv5, name="relu5")
 
-        drop5 = tf.nn.dropout(relu5, keep_prob=0.7)
-        pool5 = tf.nn.max_pool(drop5, ksize=ksize, strides=[1, 2, 2, 1], padding='VALID', name='pool5')  ##add ksize
+            drop5 = tf.nn.dropout(relu5, keep_prob=0.7)
+            pool5 = tf.nn.max_pool(drop5, ksize=ksize, strides=[1, 2, 2, 1], padding='VALID', name='pool5')  ##add ksize
 
-        ## layer6 ##
-        conv6 = tf.nn.conv2d(input=pool5, filter=self.filter6, strides=[1, 1, 1, 1], padding="SAME",
-                         name="conv6")
+            ## layer6 ##
+            conv6 = tf.nn.conv2d(input=pool5, filter=self.filter6, strides=[1, 1, 1, 1], padding="SAME",
+                             name="conv6")
 
-        relu6 = tf.nn.relu(conv6, name="relu6")
+            relu6 = tf.nn.relu(conv6, name="relu6")
 
-        drop6 = tf.nn.dropout(relu6, keep_prob=0.7)
-        pool6 = tf.nn.max_pool(drop6, ksize=ksize, strides=[1, 2, 2, 1], padding='VALID', name='pool6')
+            drop6 = tf.nn.dropout(relu6, keep_prob=0.7)
+            pool6 = tf.nn.max_pool(drop6, ksize=ksize, strides=[1, 2, 2, 1], padding='VALID', name='pool6')
 
-        ##############  fully connected layers   #################
+            ##############  fully connected layers   #################
 
-        fc1 = tf.layers.flatten(pool6,name='fc1')
+            fc1 = tf.layers.flatten(pool6,name='fc1')
 
-        self.W1 = tf.get_variable(dtype=tf.float32,name="W1",shape=[fc1.get_shape().as_list()[1] ,25],initializer=tf.contrib.layers.xavier_initializer())
+            self.W1 = tf.get_variable(dtype=tf.float32,name="W1",shape=[fc1.get_shape().as_list()[1] ,25],initializer=tf.contrib.layers.xavier_initializer())
 
-        Z1 = tf.matmul(fc1,self.W1)
-        drop_fc1 = tf.nn.dropout(keep_prob=0.4,name='drop_fc1')
-        fc2 = tf.nn.relu(drop_fc1,name='fc2')
+            Z1 = tf.matmul(fc1,self.W1)
+            drop_fc1 = tf.nn.dropout(Z1,keep_prob=0.4,name='drop_fc1')
+            fc2 = tf.nn.relu(drop_fc1,name='fc2')
 
-        self.W2 = tf.get_variable(dtype=tf.float32, name="W2", shape=[fc2.get_shape().as_list()[1], self.num_classes],
-                              initializer=tf.contrib.layers.xavier_initializer())  ##########  outputs ##########
+            self.W2 = tf.get_variable(dtype=tf.float32, name="W2", shape=[fc2.get_shape().as_list()[1], self.num_classes],
+                                  initializer=tf.contrib.layers.xavier_initializer())  ##########  outputs ##########
 
-        Z2 = tf.matmul(fc2, self.W2)
+            Z2 = tf.matmul(fc2, self.W2)
 
-        ##########  outputs ##########
+            ##########  outputs ##########
 
-        self.y_predicted = tf.nn.softmax(Z2,name='y_predicted')
+            self.y_predicted = tf.nn.softmax(Z2,name='y_predicted')
 
 
 
@@ -302,15 +264,22 @@ class Train_Network(object):
     def train_network(self):
 
         #read_tfRecord = Read_tf_record()
-        x_train,y_train = self.get_images(self.train_path)
-        x_test,y_test = self.get_images(self.test_path)
+        #x_train,y_train = self.get_images(self.train_path)
+        #x_test,y_test = self.get_images(self.test_path)
+        no_of_train_examples = 0
+        for record in tf.python_io.tf_record_iterator(self.train_path):
+            no_of_train_examples += 1
+        print('no of training examples',no_of_train_examples)
 
+        no_of_val_examples = 0
+        for record in tf.python_io.tf_record_iterator(self.val_path):
+            no_of_val_examples += 1
+        print('no of val examples', no_of_val_examples)
         #########    hyperparameters    ########
         beta1 =0.9
         beta2 = 0.99
         epochs = 1500
-        batch_size = 1
-
+        batch_size = 8
         save_path ='./training3/model.ckpt'
         log_path ='./training3/'
 
@@ -318,68 +287,69 @@ class Train_Network(object):
 
         ########### end hyeperparameters #############
         self.cost =  tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y,logits=self.y_predicted))
-        loss_summary = tf.summary.scalar("loss", self.cost)
 
         optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=beta1, beta2=beta2).minimize(self.cost)
         init = tf.global_variables_initializer()
+        saver = tf.train.Saver(var_list=tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='ModelCNN'))
 
-        saver = tf.train.Saver()
-        init = tf.global_variables_initializer()
+
+        train_iterator = Read_tf_record().input_fn(self.train_path,batch_size=batch_size)
+        val_iterator = Read_tf_record().input_fn(self.val_path, batch_size=batch_size)
+        #test_iterator = Read_tf_record().input_fn(self.test_path, batch_size=batch_size)
+
+
 
 
         with tf.Session() as sess:
             #saver = tf.train.import_meta_graph('./training2/model.ckpt-110')
             #saver.restore(sess, tf.train.latest_checkpoint('./training2/'))
-            no_of_train_examples = sess.run(tf.shape(x_train)[0])
-            no_of_test_examples = sess.run(tf.shape(x_test)[0])
-
-            print("no of train examples")
-            print(no_of_train_examples)
-
-            no_of_train_batches = int(no_of_train_examples / batch_size)
-            no_of_test_batches =int(no_of_test_examples / batch_size)
-            writer = tf.summary.FileWriter(log_path, sess.graph)
             sess.run(init)
+            next_train = train_iterator.get_next()
+            next_val = val_iterator.get_next()
+            #writer = tf.summary.FileWriter(log_path, sess.graph)
             for epoch in range (epochs+1):
-
-                previous_train_batch = 0
-                previous_test_batch = 0
+                sess.run(train_iterator.initializer)
                 total_train_sum = 0
-                total_test_sum = 0
-                # Do our mini batches:
-                for batch in range(no_of_train_batches):
-                    print("epoch no: " + str(epoch))
-                    current_train_batch = previous_train_batch + batch_size
-                    x_train_batch = x_train[previous_train_batch:current_train_batch]
+                while (True):
+                    try:
+                        print("Epoch : ",epoch)
+                        x_train_batch, y_train_batch = sess.run(next_train)
+                        x_train_batch = tf.reshape(x_train_batch, [-1, self.img_size, self.img_size, 3])
+                        y_train_batch = tf.one_hot(y_train_batch, depth=self.num_classes)
+                        _, loss = sess.run([optimizer, self.cost],
+                                           feed_dict={self.x: sess.run(x_train_batch), self.y: sess.run(y_train_batch)})
+                        sum = sess.run(self.sum, feed_dict={self.x: sess.run(x_train_batch), self.y: sess.run(y_train_batch)})
+                        total_train_sum = total_train_sum + sum
+                        print("Loss: " + str(loss))
 
-                    y_train_batch = y_train[previous_train_batch:current_train_batch]
 
-                    previous_train_batch = previous_train_batch + batch_size
-                    print(x_train_batch.shape)
-                    _, loss = sess.run([optimizer, self.cost],
-                                       feed_dict={self.x: x_train_batch, self.y: y_train_batch})
-                    sum = sess.run(self.sum, feed_dict={self.x: x_train_batch, self.y: y_train_batch})
-                    total_train_sum = total_train_sum + sum
-                    print("Loss: " + str(loss))
-                    
+                    except tf.errors.OutOfRangeError:
+                        break
+
+
+
+                if (epoch % 5 == 0):
+                    sess.run(val_iterator.initializer)
+                    total_val_sum = 0
+                    while (True):
+                        try:
+                            x_val_batch, y_val_batch = sess.run(next_val)
+
+                            x_val_batch = tf.reshape(x_val_batch, [-1, self.img_size, self.img_size, 3])
+                            y_val_batch = tf.one_hot(y_val_batch, depth=self.num_classes)
+                            sum = sess.run(self.sum,
+                                           feed_dict={self.x: sess.run(x_val_batch), self.y: sess.run(y_val_batch)})
+                            total_val_sum = total_val_sum + sum
+                        except tf.errors.OutOfRangeError:
+                            break
+                    train_accuracy = np.float32(total_train_sum) /np.float32(no_of_train_examples)
+                    val_accuracy = np.float32(total_val_sum)/np.float32(no_of_val_examples)
+                    print('Train_accuracy',train_accuracy)
+                    print('Val_accuracy', val_accuracy)
                 if (epoch % 20 == 0):
                     saver.save(sess, save_path, global_step=epoch)
-                    for batch in range(no_of_test_batches):
-                        current_test_batch = previous_test_batch + batch_size
 
-                        x_test_batch = x_test[previous_test_batch:current_test_batch]
-                        y_test_batch = y_test[previous_test_batch:current_test_batch]
-                        sum = sess.run(self.sum, feed_dict={self.x: x_test_batch, self.y: y_test_batch})
-                        total_test_sum = total_test_sum + sum
 
-                    self.train_accuracy = total_train_sum / no_of_train_examples
-                    print("train_accuracy:" + str(self.train_accuracy))
-
-                    self.test_accuracy = total_test_sum / no_of_test_examples
-                    print("test_accuracy:" + str(self.test_accuracy))
-
-                learning_rate = 1e-5 / (epoch * epoch + 1)
-                
 
 
 
