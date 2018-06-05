@@ -116,11 +116,14 @@ class Read_tf_record(object):
         #image = tf.image.decode_image(image_raw, channels=3)
 
         image = tf.decode_raw(image_raw, tf.uint8)
+        image = tf.reshape(image, [256, 256, 3])
 
         # The type is now uint8 but we need it to be float.
         #image = tf.cast(image, tf.float32)
         # Get the label associated with the image.
         label = parsed_example['label']
+        label = tf.one_hot(label, depth=6)
+
 
         # The image and label are now correct TensorFlow types.
         return image, label
@@ -243,8 +246,10 @@ class Train_Network(object):
             self.W1 = tf.get_variable(dtype=tf.float32,name="W1",shape=[fc1.get_shape().as_list()[1] ,25],initializer=tf.contrib.layers.xavier_initializer())
 
             Z1 = tf.matmul(fc1,self.W1)
+
             drop_fc1 = tf.nn.dropout(Z1,keep_prob=0.4,name='drop_fc1')
             fc2 = tf.nn.relu(drop_fc1,name='fc2')
+
 
             self.W2 = tf.get_variable(dtype=tf.float32, name="W2", shape=[fc2.get_shape().as_list()[1], self.num_classes],
                                   initializer=tf.contrib.layers.xavier_initializer())  ##########  outputs ##########
@@ -279,7 +284,7 @@ class Train_Network(object):
         beta1 =0.9
         beta2 = 0.99
         epochs = 1500
-        batch_size = 8
+        batch_size = 32
         save_path ='./training3/model.ckpt'
         log_path ='./training3/'
 
@@ -314,11 +319,10 @@ class Train_Network(object):
                     try:
                         print("Epoch : ",epoch)
                         x_train_batch, y_train_batch = sess.run(next_train)
-                        x_train_batch = tf.reshape(x_train_batch, [-1, self.img_size, self.img_size, 3])
-                        y_train_batch = tf.one_hot(y_train_batch, depth=self.num_classes)
+                        print(x_train_batch.shape)
                         _, loss = sess.run([optimizer, self.cost],
-                                           feed_dict={self.x: sess.run(x_train_batch), self.y: sess.run(y_train_batch)})
-                        sum = sess.run(self.sum, feed_dict={self.x: sess.run(x_train_batch), self.y: sess.run(y_train_batch)})
+                                           feed_dict={self.x: x_train_batch, self.y: y_train_batch})
+                        sum = sess.run(self.sum, feed_dict={self.x: x_train_batch, self.y: y_train_batch})
                         total_train_sum = total_train_sum + sum
                         print("Loss: " + str(loss))
 
@@ -335,10 +339,8 @@ class Train_Network(object):
                         try:
                             x_val_batch, y_val_batch = sess.run(next_val)
 
-                            x_val_batch = tf.reshape(x_val_batch, [-1, self.img_size, self.img_size, 3])
-                            y_val_batch = tf.one_hot(y_val_batch, depth=self.num_classes)
                             sum = sess.run(self.sum,
-                                           feed_dict={self.x: sess.run(x_val_batch), self.y: sess.run(y_val_batch)})
+                                           feed_dict={self.x: x_val_batch, self.y: y_val_batch})
                             total_val_sum = total_val_sum + sum
                         except tf.errors.OutOfRangeError:
                             break
