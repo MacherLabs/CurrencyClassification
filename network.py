@@ -5,6 +5,7 @@ import  cv2
 import sys
 import os
 import random
+import matplotlib.pyplot as plt
 class Write_tf_record(object):
     def get_paths(self):
         MAIN_PATH = './dataset/'
@@ -152,7 +153,7 @@ class Train_Network(object):
 
 
         no_filter1 = 64
-        no_filter2 = 32
+        no_filter2 = 64
         no_filter3 = 32
         no_filter4 = 16
         no_filter5 = 16
@@ -191,7 +192,8 @@ class Train_Network(object):
        ##############     CNN LAYERS #################
             ksize = [1,3,3,1]
             ## layer1 ##
-            conv1 = tf.nn.conv2d(input=self.x,filter =self.filter1,strides= [1,1,1,1],
+            input1 = tf.layers.batch_normalization(self.x)
+            conv1 = tf.nn.conv2d(input=input1,filter =self.filter1,strides= [1,1,1,1],
                                  padding="SAME",name = "conv1")
             relu1 = tf.nn.relu(conv1,name="relu1")
             drop1 = tf.nn.dropout(relu1,keep_prob=0.7)
@@ -203,7 +205,7 @@ class Train_Network(object):
                                  name="conv2")
             relu2 = tf.nn.relu(conv2, name="relu2")
 
-            drop2 = tf.nn.dropout(relu2, keep_prob=0.7)
+            drop2 = tf.nn.dropout(relu2, keep_prob=0.7 )
             pool2 = tf.nn.max_pool(drop2, ksize=ksize, strides=[1, 2, 2, 1], padding='VALID', name='pool2')  ##add ksize
 
             ## layer3 ##
@@ -230,41 +232,50 @@ class Train_Network(object):
             drop5 = tf.nn.dropout(relu5, keep_prob=0.7)
             pool5 = tf.nn.max_pool(drop5, ksize=ksize, strides=[1, 2, 2, 1], padding='VALID', name='pool5')  ##add ksize
 
+
+            '''
             ## layer6 ##
             conv6 = tf.nn.conv2d(input=pool5, filter=self.filter6, strides=[1, 1, 1, 1], padding="SAME",
                              name="conv6")
 
             relu6 = tf.nn.relu(conv6, name="relu6")
 
-            drop6 = tf.nn.dropout(relu6, keep_prob=0.7)
-            pool6 = tf.nn.max_pool(drop6, ksize=ksize, strides=[1, 2, 2, 1], padding='VALID', name='pool6')
+            #drop6 = tf.nn.dropout(relu6, keep_prob=1)
+            pool6 = tf.nn.max_pool(relu6, ksize=ksize, strides=[1, 2, 2, 1], padding='VALID', name='pool6')
+            '''
 
             ##############  fully connected layers   #################
 
-            fc1 = tf.layers.flatten(pool6,name='fc1')
+            fc1 = tf.layers.flatten(pool5,name='fc1')
 
             self.W1 = tf.get_variable(dtype=tf.float32,name="W1",shape=[fc1.get_shape().as_list()[1] ,25],initializer=tf.contrib.layers.xavier_initializer())
+            self.b1 = tf.get_variable(dtype=tf.float32,name="b1",shape=[25],initializer=tf.zeros_initializer())
+            Z1 = tf.add(tf.matmul(fc1,self.W1),self.b1)
 
-            Z1 = tf.matmul(fc1,self.W1)
-
+            '''
             drop_fc1 = tf.nn.dropout(Z1,keep_prob=0.4,name='drop_fc1')
+
             fc2 = tf.nn.relu(drop_fc1,name='fc2')
 
 
             self.W2 = tf.get_variable(dtype=tf.float32, name="W2", shape=[fc2.get_shape().as_list()[1], self.num_classes],
                                   initializer=tf.contrib.layers.xavier_initializer())  ##########  outputs ##########
 
+            self.b2 = tf.get_variable(dtype=tf.float32, name="b2", shape=[self.num_classes], initializer=tf.zeros_initializer())
+
             Z2 = tf.matmul(fc2, self.W2)
 
+            '''
             ##########  outputs ##########
 
-            self.y_predicted = tf.nn.softmax(Z2,name='y_predicted')
 
+            self.y_predicted = tf.nn.softmax(Z1,name='y_predicted')
 
+            self.cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y, logits=self.y_predicted),name='cost')
 
-        self.accuracy = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(self.y, 1), tf.argmax(self.y_predicted, 1)), dtype=tf.float32))
+            self.accuracy = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(self.y, 1), tf.argmax(self.y_predicted, 1)), dtype=tf.float32))
 
-        self.sum = tf.reduce_sum(tf.cast(tf.equal(tf.argmax(self.y, 1), tf.argmax(self.y_predicted, 1)), dtype=tf.float32),name="sum")
+            self.sum = tf.reduce_sum(tf.cast(tf.equal(tf.argmax(self.y, 1), tf.argmax(self.y_predicted, 1)), dtype=tf.float32),name="sum")
 
     def train_network(self):
 
@@ -283,17 +294,16 @@ class Train_Network(object):
         #########    hyperparameters    ########
         beta1 =0.9
         beta2 = 0.99
-        epochs = 1500
+        epochs = 5000
         batch_size = 32
         save_path ='./training3/model.ckpt'
         log_path ='./training3/'
 
-        learning_rate = 1e-5
+        learning_rate = 1e-6
 
         ########### end hyeperparameters #############
-        self.cost =  tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y,logits=self.y_predicted))
 
-        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=beta1, beta2=beta2).minimize(self.cost)
+        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate,beta1=beta1,beta2=beta2).minimize(self.cost)
         init = tf.global_variables_initializer()
         saver = tf.train.Saver(var_list=tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='ModelCNN'))
 
@@ -301,36 +311,50 @@ class Train_Network(object):
         train_iterator = Read_tf_record().input_fn(self.train_path,batch_size=batch_size)
         val_iterator = Read_tf_record().input_fn(self.val_path, batch_size=batch_size)
         #test_iterator = Read_tf_record().input_fn(self.test_path, batch_size=batch_size)
+        merged = tf.summary.merge_all()
 
-
-
+        grads = tf.gradients(self.cost, self.W1)
 
         with tf.Session() as sess:
             #saver = tf.train.import_meta_graph('./training2/model.ckpt-110')
             #saver.restore(sess, tf.train.latest_checkpoint('./training2/'))
-            sess.run(init)
             next_train = train_iterator.get_next()
             next_val = val_iterator.get_next()
-            #writer = tf.summary.FileWriter(log_path, sess.graph)
+            tf.summary.scalar("cost", self.cost)
+
+            sess.run(init)
+            writer = tf.summary.FileWriter(log_path, sess.graph)
             for epoch in range (epochs+1):
                 sess.run(train_iterator.initializer)
                 total_train_sum = 0
+
+                flag = True
+                flag1 = True
+
                 while (True):
                     try:
-                        print("Epoch : ",epoch)
+
+
                         x_train_batch, y_train_batch = sess.run(next_train)
-                        print(x_train_batch.shape)
-                        _, loss = sess.run([optimizer, self.cost],
+                        plt.show(plt.imshow(x_train_batch[0]))
+                        print()
+                        _, loss,predicted = sess.run([optimizer, self.cost,self.y_predicted],
                                            feed_dict={self.x: x_train_batch, self.y: y_train_batch})
                         sum = sess.run(self.sum, feed_dict={self.x: x_train_batch, self.y: y_train_batch})
                         total_train_sum = total_train_sum + sum
-                        print("Loss: " + str(loss))
 
-
+                        if flag:
+                            print("Epoch : ", epoch)
+                            flag = False
+                            #print("gradients",sess.run(grads,feed_dict={self.x: x_train_batch, self.y: y_train_batch}))
+                            #print("shape of W1",self.W1.shape)
+                            #print("Predicted value",predicted)
+                            #print("Target value:",y_train_batch)
+                            print("Training Loss: " + str(loss))
+                            #print("W2",sess.run(self.W1))
                     except tf.errors.OutOfRangeError:
+                        print(total_train_sum)
                         break
-
-
 
                 if (epoch % 5 == 0):
                     sess.run(val_iterator.initializer)
@@ -342,7 +366,11 @@ class Train_Network(object):
                             sum = sess.run(self.sum,
                                            feed_dict={self.x: x_val_batch, self.y: y_val_batch})
                             total_val_sum = total_val_sum + sum
+                            if flag1:
+                                print("val loss",sess.run(self.cost,feed_dict={self.x:x_val_batch,self.y:y_val_batch}))
+                                flag1 = False
                         except tf.errors.OutOfRangeError:
+                            print(total_val_sum)
                             break
                     train_accuracy = np.float32(total_train_sum) /np.float32(no_of_train_examples)
                     val_accuracy = np.float32(total_val_sum)/np.float32(no_of_val_examples)
@@ -350,6 +378,8 @@ class Train_Network(object):
                     print('Val_accuracy', val_accuracy)
                 if (epoch % 20 == 0):
                     saver.save(sess, save_path, global_step=epoch)
+                if (epoch % 1000 == 0):
+                    learning_rate = learning_rate / 10
 
 
 
@@ -367,7 +397,7 @@ class Test_graph(object):
 
     def __init__(self):
         self.classes = ['ten', 'twenty', 'fifty', 'hundred', 'five hundred', 'thousand']
-        path = './training2/currency_predictor-110.pb'
+        path = './currency_predictor.pb'
         detection_graph = tf.Graph()
         with detection_graph.as_default():
             od_graph_def = tf.GraphDef()
@@ -383,13 +413,17 @@ class Test_graph(object):
         self.batch_size =8
 
 
+
+
+        self.y_predicted = detection_graph.get_tensor_by_name('final_result:0')
+
+
     def predict_currency(self,path):
         image = cv2.imread(path)
         image = cv2.resize(image,(256,256))
         image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
         image = np.expand_dims(image,axis=0)
         prediction = self.sess.run(self.y_predicted,feed_dict={self.x:image})
-        print(prediction)
         index =np.argmax(prediction,axis=1)
 
         print(self.classes[index[0]])
@@ -430,4 +464,3 @@ if __name__ == '__main__':
     network.train_network()
 
 
-    

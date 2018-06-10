@@ -6,10 +6,21 @@ val.tfrecord
 train.tfrecord
 mobilenet_v1_100_224/
 mobileNetv2/
-idea/
+.idea/
 currency_dataset_new.zip
 practise.py
 training3/
 test_data (copy).txt
 train_data (copy).txt
 network_backup.py
+__pycache__/
+age_gender_dataset/
+currency_dataset/
+currency_dataset_corrected_new.zip
+mobileNetv2_old_dataset/
+mobilenet_v2_140_new_dataset/
+new_currency_tfrecords/
+test_data.txt
+train_data.txt
+
+
