@@ -120,72 +120,67 @@ class Test_Graph(object):
         accuracy = np.float32(total_sum) / np.float32(no_of_examples)
         print('accuracy', 100*accuracy)
 
-'''
-def load_graph():
-    detection_graph = tf.Graph()
-    with detection_graph.as_default():
-        od_graph_def = tf.GraphDef()
-        with open(model_file, 'rb')    as fid:
-            serialized_graph = fid.read()
-            od_graph_def.ParseFromString(serialized_graph)
-            tf.import_graph_def(od_graph_def, name='')
-    return detection_graph
-
-def load_labels(label_file):
-  label = []
-  proto_as_ascii_lines = tf.gfile.GFile(label_file).readlines()
-  for l in proto_as_ascii_lines:
-    label.append(l.rstrip())
-  return label
+    def operation(self,image,per_cropped=0.2,hor_stretch=1.1,ver_stretch=1.1,rotation=20):
 
 
+        rows, cols = image.shape[0], image.shape[1]
 
+        # rotation
+        M1 = cv2.getRotationMatrix2D((cols / 2, rows / 2), rotation, 1)
+        rot_plus_20 = cv2.warpAffine(image, M1, (cols, rows))
+    
+        M2 = cv2.getRotationMatrix2D((cols / 2, rows / 2), -1*rotation, 1)
+        rot_minus_20 = cv2.warpAffine(image, M2, (cols, rows))
+        #Cropping part
+        cropped = image[int(rows * per_cropped / 2):int(rows - rows * per_cropped / 2),int(cols * per_cropped / 2):int(cols - cols * per_cropped / 2)]
 
+        # Stretching part
+        hor_img = cv2.resize(image, dsize=None, fx=hor_stretch, fy=1)
+        ver_img = cv2.resize(image, dsize=None, fx=1, fy=ver_stretch)
 
-def  predict_currency(image):
-    t = image
-    graph = load_graph('./mobilenet_v2_140_new_dataset/output_graph.pb')
-    labels = load_labels('./mobilenet_v2_140_new_dataset/output_labels.txt')
+        images= {
+            "plus_20":rot_plus_20,
+            "minus_20": rot_minus_20,
+            "cropped" : cropped,
+            "hor_stretched": hor_stretch,
+            "ver_stretched": ver_stretch
 
-    input_name ="Placeholder"
-    output_name = 'final_result'
-    input_operation = graph.get_operation_by_name(input_name)
-    output_operation = graph.get_operation_by_name(output_name)
-
-    with tf.Session(graph=graph) as sess:
-        results = sess.run(output_operation.outputs[0], {
-            input_operation.outputs[0]: t
-        })
-    results = np.squeeze(results)
-
-    top_k = results.argsort()[-5:][::-1]
-    for i in top_k:
-        print(labels[i], results[i])
+        }
+        return images
 
 
 
 
 
-path = './currency_dataset/fifty/9.jpg'
-image = cv2.imread(path)
-image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
-
-image = read_tensor_from_image_image(image)
-predict_currency(image)
-image = read_tensor_from_image_file(path)
-predict_currency(image)
-'''
 if __name__=='__main__':
     test = Test_Graph()
 
-
+    '''
     path = './new_currency_tfrecords/currency_two thousand.tfrecord'
     test.predict_accuracy(path)
     '''
+    img = cv2.imread('/home/pranav/PycharmProjects/Note_classifier/currency_dataset/five hundred/3ac.jpg')
+    img = cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
+    print(img.shape)
+    rows,cols = img.shape[0:2]
 
-    image = test.read_tensor_from_image_file(file_name='./currency_dataset/fifty/347.jpg')
-    print(image.shape)
-    plt.show(plt.imshow(image[0]))
+    per_cropped = 0.99
+    cv2.imshow('original', img)
+    print(img.shape)
 
-    test.predict_currency(image=image)
-    '''
+    cv2.imshow('cropped',img)
+    print(img.shape)
+    #cv2.imshow('cropped',img[int(rows/2*(1-per)) :int(rows/2*(1+per)) , int(cols/2*(1-per)) :int(cols/2*(1+per))])
+    cv2.waitKey(0)
+
+
+
+
+    #image = test.read_tensor_from_image_file(file_name='/home/pranav/PycharmProjects/Note_classifier/currency_dataset/five hundred/3ac.jpg')
+
+    #image = test.read_tensor_from_image_image(image=dst1)
+    #plt.show(plt.imshow(img))
+
+
+    #test.predict_currency(image=image)
+
