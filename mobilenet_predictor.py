@@ -120,7 +120,7 @@ class Test_Graph(object):
         accuracy = np.float32(total_sum) / np.float32(no_of_examples)
         print('accuracy', 100*accuracy)
 
-    def operation(self,image,per_cropped=0.2,hor_stretch=1.1,ver_stretch=1.1,rotation=20):
+    def operation(self,image,per_cropped=0.2,hor_stretch=1.1,ver_stretch=1.1,rotation=20,brightness=0.1,contrast=0.4):
 
 
         rows, cols = image.shape[0], image.shape[1]
@@ -138,13 +138,24 @@ class Test_Graph(object):
         hor_img = cv2.resize(image, dsize=None, fx=hor_stretch, fy=1)
         ver_img = cv2.resize(image, dsize=None, fx=1, fy=ver_stretch)
 
+        ## brightness part and contrast part
+
+        bright1 = cv2.addWeighted(image, 1, image, 0, (brightness)*255)
+        bright2 = cv2.addWeighted(image, 1, image, 0, (brightness*2) * 255)
+        contrast1 = cv2.addWeighted(image, 1+contrast, image, 0,0)
+        contrast2 = cv2.addWeighted(image, 1 + contrast, image, 0, -255*contrast)
+
+
         images= {
             "plus_20":rot_plus_20,
             "minus_20": rot_minus_20,
             "cropped" : cropped,
             "hor_stretched": hor_stretch,
-            "ver_stretched": ver_stretch
-
+            "ver_stretched": ver_stretch,
+            "bright1": bright1,
+            "bright2": bright2,
+            "contrast1": contrast1,
+            "contrast2": contrast2
         }
         return images
 
@@ -159,20 +170,35 @@ if __name__=='__main__':
     path = './new_currency_tfrecords/currency_two thousand.tfrecord'
     test.predict_accuracy(path)
     '''
+
+
     img = cv2.imread('/home/pranav/PycharmProjects/Note_classifier/currency_dataset/five hundred/3ac.jpg')
-    img = cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
-    print(img.shape)
-    rows,cols = img.shape[0:2]
+    #img = cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
+    cv2.imshow('original',img)
+    '''
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)  # convert it to hsv
 
-    per_cropped = 0.99
-    cv2.imshow('original', img)
-    print(img.shape)
+    h, s, v = cv2.split(hsv)
+    v += 255
+    final_hsv = cv2.merge((h, s, v))
+    '''
+    #sess = tf.Session()
 
-    cv2.imshow('cropped',img)
-    print(img.shape)
-    #cv2.imshow('cropped',img[int(rows/2*(1-per)) :int(rows/2*(1+per)) , int(cols/2*(1-per)) :int(cols/2*(1+per))])
+    #img = sess.run(tf.image.random_brightness(img,max_delta=0.5))
+
+    b = 0.2  # brightness
+    c = 0.4  # contrast
+
+    img = cv2.imread('/home/pranav/PycharmProjects/Note_classifier/currency_dataset/five hundred/3ac.jpg')
+    cv2.imshow('original',img)
+    b_c= cv2.addWeighted(img, 1. + c, img, 0, (b - c) * 255)
+    cv2.imshow('b_c', b_c)
     cv2.waitKey(0)
 
+
+    # call addWeighted function, which performs:
+    #    dst = src1*alpha + src2*beta + gamma
+    # we use beta = 0 to effectively only operate on src1
 
 
 
