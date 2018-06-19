@@ -60,7 +60,7 @@ class Test_Graph(object):
 
         float_caster = tf.cast(image, tf.float32)
         dims_expander = tf.expand_dims(float_caster, 0)
-        resized = tf.image.resize_bilinear(float_caster, [input_height, input_width])
+        resized = tf.image.resize_bilinear(dims_expander, [input_height, input_width])
         normalized = tf.divide(tf.subtract(resized, [input_mean]), [input_std])
         sess = tf.Session()
         result = sess.run(normalized)
@@ -114,25 +114,26 @@ class Test_Graph(object):
             })
                 #print(predicted,y_batch)
                 sum = np.sum(np.argmax(predicted, 1) == np.argmax(y_batch, 1))
+
                 total_sum = total_sum + sum
             except tf.errors.OutOfRangeError:
                 break
         accuracy = np.float32(total_sum) / np.float32(no_of_examples)
         print('accuracy', 100*accuracy)
 
-    def operation(self,image,per_cropped=0.2,hor_stretch=1.1,ver_stretch=1.1,rotation=20,brightness=0.1,contrast=0.4):
-
-
+    def operation(self,image, per_cropped=0.2, hor_stretch=1.1, ver_stretch=1.1, rotation=20, brightness=0.1,
+                  contrast=0.4):
         rows, cols = image.shape[0], image.shape[1]
 
         # rotation
         M1 = cv2.getRotationMatrix2D((cols / 2, rows / 2), rotation, 1)
         rot_plus_20 = cv2.warpAffine(image, M1, (cols, rows))
-    
-        M2 = cv2.getRotationMatrix2D((cols / 2, rows / 2), -1*rotation, 1)
+
+        M2 = cv2.getRotationMatrix2D((cols / 2, rows / 2), -1 * rotation, 1)
         rot_minus_20 = cv2.warpAffine(image, M2, (cols, rows))
-        #Cropping part
-        cropped = image[int(rows * per_cropped / 2):int(rows - rows * per_cropped / 2),int(cols * per_cropped / 2):int(cols - cols * per_cropped / 2)]
+        # Cropping part
+        cropped = image[int(rows * per_cropped / 2):int(rows - rows * per_cropped / 2),
+                  int(cols * per_cropped / 2):int(cols - cols * per_cropped / 2)]
 
         # Stretching part
         hor_img = cv2.resize(image, dsize=None, fx=hor_stretch, fy=1)
@@ -140,22 +141,23 @@ class Test_Graph(object):
 
         ## brightness part and contrast part
 
-        bright1 = cv2.addWeighted(image, 1, image, 0, (brightness)*255)
-        bright2 = cv2.addWeighted(image, 1, image, 0, (brightness*2) * 255)
-        contrast1 = cv2.addWeighted(image, 1+contrast, image, 0,0)
-        contrast2 = cv2.addWeighted(image, 1 + contrast, image, 0, -255*contrast)
+        bright1 = cv2.addWeighted(image, 1, image, 0, (brightness) * 255)
+        bright2 = cv2.addWeighted(image, 1, image, 0, (brightness * 2) * 255)
+        contrast1 = cv2.addWeighted(image, 1 + contrast, image, 0, 0)
+        contrast2 = cv2.addWeighted(image, 1 + contrast, image, 0, -255 * contrast)
+        grayscale = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
-
-        images= {
-            "plus_20":rot_plus_20,
+        images = {
+            "plus_20": rot_plus_20,
             "minus_20": rot_minus_20,
-            "cropped" : cropped,
-            "hor_stretched": hor_stretch,
-            "ver_stretched": ver_stretch,
-            "bright1": bright1,
-            "bright2": bright2,
+            "cropped": cropped,
+            "hor_stretched": hor_img,
+            "ver_stretched": ver_img,
+            #"bright1": bright1,
+            #"bright2": bright2,
             "contrast1": contrast1,
-            "contrast2": contrast2
+            "contrast2": contrast2,
+            "gray_scale": grayscale
         }
         return images
 
@@ -164,49 +166,57 @@ class Test_Graph(object):
 
 
 if __name__=='__main__':
-    test = Test_Graph()
-
-    '''
-    path = './new_currency_tfrecords/currency_two thousand.tfrecord'
-    test.predict_accuracy(path)
-    '''
+    test = Test_Graph(model_file='intermediateintermediate_34500.pb')
 
 
-    img = cv2.imread('/home/pranav/PycharmProjects/Note_classifier/currency_dataset/five hundred/3ac.jpg')
-    #img = cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
-    cv2.imshow('original',img)
-    '''
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)  # convert it to hsv
+    #image = test.read_tensor_from_image_file(file_name='/home/pranav/Downloads/twenty2.jpeg')
 
-    h, s, v = cv2.split(hsv)
-    v += 255
-    final_hsv = cv2.merge((h, s, v))
-    '''
-    #sess = tf.Session()
+    categories = ["plus_20", "minus_20", "cropped", "hor_stretched", "ver_stretched", "bright1", "bright2", "contrast1",
+                  "contrast2", "gray_scale"]
 
-    #img = sess.run(tf.image.random_brightness(img,max_delta=0.5))
+    image  = cv2.imread('/home/pranav/Downloads/download (5).jpeg')
+    # cv2.imshow('original',image)
 
-    b = 0.2  # brightness
-    c = 0.4  # contrast
-
-    img = cv2.imread('/home/pranav/PycharmProjects/Note_classifier/currency_dataset/five hundred/3ac.jpg')
-    cv2.imshow('original',img)
-    b_c= cv2.addWeighted(img, 1. + c, img, 0, (b - c) * 255)
-    cv2.imshow('b_c', b_c)
-    cv2.waitKey(0)
-
-
-    # call addWeighted function, which performs:
-    #    dst = src1*alpha + src2*beta + gamma
-    # we use beta = 0 to effectively only operate on src1
+    #image  = cv2.resize(image,(224,224))
+    image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
 
 
 
-    #image = test.read_tensor_from_image_file(file_name='/home/pranav/PycharmProjects/Note_classifier/currency_dataset/five hundred/3ac.jpg')
+    # plt.show(plt.imshow(image))
+    #image = np.expand_dims(image,0)
+    images = test.operation(image)
 
+
+
+
+    #image = test.read_tensor_from_image_image(image=image)
     #image = test.read_tensor_from_image_image(image=dst1)
-    #plt.show(plt.imshow(img))
 
 
-    #test.predict_currency(image=image)
+    for category in categories:
+        #images[category] = cv2.resize(images[category],(224,224))
+        #hsv_test = cv2.cvtColor(images[category],cv2.COLOR_RGB2HSV)
+        #h = hsv_test[0,:,:]
+        #print("h value",h)
+        print("category",category)
+        images[category] = cv2.cvtColor(images[category], cv2.COLOR_RGB2BGR)
+
+        cv2.imshow(category,images[category])
+
+        images[category] = cv2.cvtColor(images[category], cv2.COLOR_BGR2HSV)
+        #image = test.read_tensor_from_image_image(images[category])
+
+        h, _, _ = cv2.split(images[category])
+        print("h value of image")
+        cv2.imshow('h_'+category, h)
+        cv2.waitKey(5000)
+        #test.predict_currency(image=image)
+        print("\n")
+
+
+    
+
+    plt.show(plt.imshow(image[0]))
+
+    test.predict_currency(image=image)
 
