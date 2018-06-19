@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 from tfRecord import Read_tf_record
 import matplotlib.pyplot as plt
+import random
 
 
 class Test_Graph(object):
@@ -145,20 +146,33 @@ class Test_Graph(object):
         bright2 = cv2.addWeighted(image, 1, image, 0, (brightness * 2) * 255)
         contrast1 = cv2.addWeighted(image, 1 + contrast, image, 0, 0)
         contrast2 = cv2.addWeighted(image, 1 + contrast, image, 0, -255 * contrast)
-        grayscale = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        normalizedImg = cv2.normalize(image, 0, 255, cv2.NORM_MINMAX)
+        normalizedImg = cv2.resize(normalizedImg,(224,224))
+
+
 
         images = {
+            "original":image,
             "plus_20": rot_plus_20,
             "minus_20": rot_minus_20,
             "cropped": cropped,
             "hor_stretched": hor_img,
             "ver_stretched": ver_img,
-            #"bright1": bright1,
-            #"bright2": bright2,
+            "bright1": bright1,
+            "bright2": bright2,
             "contrast1": contrast1,
             "contrast2": contrast2,
-            "gray_scale": grayscale
+            "normalized": normalizedImg,
         }
+
+        categories = ["original", "plus_20", "minus_20", "cropped", "hor_stretched","bright1","bright2", "ver_stretched","contrast1","contrast2", "normalized"]
+
+        random_index = random.sample(range(1, len(images)), 8)
+        print(random_index)
+        for index in random_index:
+            images[categories[index]] = cv2.cvtColor(images[categories[index]], cv2.COLOR_RGB2GRAY)
+            plt.show(plt.imshow(images[categories[index]]))
+
         return images
 
 
@@ -166,42 +180,46 @@ class Test_Graph(object):
 
 
 if __name__=='__main__':
-    test = Test_Graph(model_file='intermediateintermediate_34500.pb')
 
+
+    test = Test_Graph(model_file='intermediateintermediate_34500.pb')
 
     #image = test.read_tensor_from_image_file(file_name='/home/pranav/Downloads/twenty2.jpeg')
 
-    categories = ["plus_20", "minus_20", "cropped", "hor_stretched", "ver_stretched", "bright1", "bright2", "contrast1",
-                  "contrast2", "gray_scale"]
+    categories = ["original", "plus_20", "minus_20", "cropped", "hor_stretched", "bright1", "bright2", "ver_stretched",
+                  "contrast1", "contrast2", "normalized"]
 
     image  = cv2.imread('/home/pranav/Downloads/download (5).jpeg')
     # cv2.imshow('original',image)
 
     #image  = cv2.resize(image,(224,224))
     image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
+    plt.show(plt.imshow(image))
+
+    image = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
+    plt.show(plt.imshow(image))
+
 
 
 
     # plt.show(plt.imshow(image))
     #image = np.expand_dims(image,0)
-    images = test.operation(image)
-
-
-
+    #images = test.operation(image)
 
     #image = test.read_tensor_from_image_image(image=image)
     #image = test.read_tensor_from_image_image(image=dst1)
 
-
+    '''
     for category in categories:
         #images[category] = cv2.resize(images[category],(224,224))
         #hsv_test = cv2.cvtColor(images[category],cv2.COLOR_RGB2HSV)
         #h = hsv_test[0,:,:]
         #print("h value",h)
         print("category",category)
-        images[category] = cv2.cvtColor(images[category], cv2.COLOR_RGB2BGR)
+        #images[category] = cv2.cvtColor(images[category], cv2.COLOR_RGB2BGR)
 
-        cv2.imshow(category,images[category])
+        plt.show(plt.imshow(images[category]))
+
 
         images[category] = cv2.cvtColor(images[category], cv2.COLOR_BGR2HSV)
         #image = test.read_tensor_from_image_image(images[category])
@@ -214,9 +232,11 @@ if __name__=='__main__':
         print("\n")
 
 
+    '''
+
     
 
-    plt.show(plt.imshow(image[0]))
+    #plt.show(plt.imshow(image[0]))
 
-    test.predict_currency(image=image)
+    #test.predict_currency(image=image)
 

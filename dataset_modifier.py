@@ -1,5 +1,6 @@
 import cv2
 import os
+import random
 
 def operation( image, per_cropped=0.2, hor_stretch=1.1, ver_stretch=1.1, rotation=20, brightness=0.1,
               contrast=0.4):
@@ -25,9 +26,10 @@ def operation( image, per_cropped=0.2, hor_stretch=1.1, ver_stretch=1.1, rotatio
     bright2 = cv2.addWeighted(image, 1, image, 0, (brightness * 2) * 255)
     contrast1 = cv2.addWeighted(image, 1 + contrast, image, 0, 0)
     contrast2 = cv2.addWeighted(image, 1 + contrast, image, 0, -255 * contrast)
-    grayscale = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+
 
     images = {
+        "original": image,
         "plus_20": rot_plus_20,
         "minus_20": rot_minus_20,
         "cropped": cropped,
@@ -37,11 +39,19 @@ def operation( image, per_cropped=0.2, hor_stretch=1.1, ver_stretch=1.1, rotatio
         "bright2": bright2,
         "contrast1": contrast1,
         "contrast2": contrast2,
-        "gray_scale": grayscale
+        # "normalized": normalizedImg,
     }
+
+    categories = ["original", "plus_20", "minus_20", "cropped", "hor_stretched", "bright1", "bright2", "ver_stretched",
+                  "contrast1", "contrast2", "normalized"]
+
+    random_index = random.sample(range(1, len(images)), 8)
+    print(random_index)
+    for index in random_index:
+        images[categories[index]] = cv2.cvtColor(images[categories[index]], cv2.COLOR_BGR2GRAY)
     return images
 
-MAIN_PATH ='./currency_dataset/'
+MAIN_PATH ='./currency_dataset (copy)/'
 #dirs  = ['fifty','fifty new','hundred','ten','twenty','two hundred','two thousand']
 dirs = os.listdir(MAIN_PATH)
 print(dirs)
@@ -59,7 +69,8 @@ for dir in dirs:
 
             print(img.shape)
             images = operation(img)
-            categories = ["plus_20","minus_20","cropped","hor_stretched","ver_stretched","bright1","bright2","contrast1","contrast2","gray_scale"]
+            categories = ["original", "plus_20", "minus_20", "cropped", "hor_stretched", "bright1", "bright2",
+                          "ver_stretched","contrast1", "contrast2"]
             for category in categories:
                 img = images[category]
                 print(path+'_'+category)
