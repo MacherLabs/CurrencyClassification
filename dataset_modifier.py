@@ -29,7 +29,6 @@ def operation( image, per_cropped=0.2, hor_stretch=1.1, ver_stretch=1.1, rotatio
 
 
     images = {
-        "original": image,
         "plus_20": rot_plus_20,
         "minus_20": rot_minus_20,
         "cropped": cropped,
@@ -42,7 +41,7 @@ def operation( image, per_cropped=0.2, hor_stretch=1.1, ver_stretch=1.1, rotatio
         # "normalized": normalizedImg,
     }
 
-    categories = ["original", "plus_20", "minus_20", "cropped", "hor_stretched", "bright1", "bright2", "ver_stretched",
+    categories = [ "plus_20", "minus_20", "cropped", "hor_stretched", "bright1", "bright2", "ver_stretched",
                   "contrast1", "contrast2", "normalized"]
 
     random_index = random.sample(range(1, len(images)), 8)
@@ -69,7 +68,7 @@ for dir in dirs:
 
             print(img.shape)
             images = operation(img)
-            categories = ["original", "plus_20", "minus_20", "cropped", "hor_stretched", "bright1", "bright2",
+            categories = [ "plus_20", "minus_20", "cropped", "hor_stretched", "bright1", "bright2",
                           "ver_stretched","contrast1", "contrast2"]
             for category in categories:
                 img = images[category]

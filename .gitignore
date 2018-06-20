@@ -25,5 +25,7 @@ mobilenet_v2_140_new_dataset/
 new_currency_tfrecords/
 test_data.txt
 train_data.txt
+currency_dataset (copy)/
+
 
 
