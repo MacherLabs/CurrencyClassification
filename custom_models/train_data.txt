@@ -1,0 +1,6 @@
+./dataset/twenty/50.jpg 1
+./dataset/ten/73.jpg 0
+./dataset/fifty/289.jpg 2
+./dataset/twenty/42.jpg 1
+./dataset/fivehundred/298.jpg 4
+./dataset/thousand/66.jpg 5

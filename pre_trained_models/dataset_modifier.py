@@ -50,7 +50,7 @@ def operation( image, per_cropped=0.2, hor_stretch=1.1, ver_stretch=1.1, rotatio
         images[categories[index]] = cv2.cvtColor(images[categories[index]], cv2.COLOR_BGR2GRAY)
     return images
 
-MAIN_PATH ='./currency_new_dataset/'
+MAIN_PATH ='./currency_dataset (copy)/'
 #dirs  = ['fifty','fifty new','hundred','ten','twenty','two hundred','two thousand']
 dirs = os.listdir(MAIN_PATH)
 print(dirs)

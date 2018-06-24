@@ -1,0 +1,4 @@
+./dataset/fivehundred/187.jpg 4
+./dataset/fivehundred/227.jpg 4
+./dataset/ten/25.jpg 0
+./dataset/ten/255.jpg 0
