@@ -44,13 +44,13 @@ def operation( image, per_cropped=0.2, hor_stretch=1.1, ver_stretch=1.1, rotatio
     categories = [ "plus_20", "minus_20", "cropped", "hor_stretched", "bright1", "bright2", "ver_stretched",
                   "contrast1", "contrast2", "normalized"]
 
-    random_index = random.sample(range(1, len(images)), 8)
+    random_index = random.sample(range(1, len(images)), 5)
     print(random_index)
     for index in random_index:
         images[categories[index]] = cv2.cvtColor(images[categories[index]], cv2.COLOR_BGR2GRAY)
     return images
 
-MAIN_PATH ='./currency_dataset (copy)/'
+MAIN_PATH ='./currency_new_dataset/'
 #dirs  = ['fifty','fifty new','hundred','ten','twenty','two hundred','two thousand']
 dirs = os.listdir(MAIN_PATH)
 print(dirs)
@@ -63,7 +63,10 @@ for dir in dirs:
     for img_dir in img_dirs:
         path = os.path.join(path1,img_dir)
 
+
         img  = cv2.imread(path)
+        path, ext = os.path.splitext(path)
+
         try:
 
             print(img.shape)
@@ -72,8 +75,10 @@ for dir in dirs:
                           "ver_stretched","contrast1", "contrast2"]
             for category in categories:
                 img = images[category]
-                print(path+'_'+category)
-                cv2.imwrite(path+'_'+category,img)
+                path2 = path +'_'+category
+                path2 = path2 +ext
+                print(path2)
+                cv2.imwrite(path2,img)
         except:
             print("exception")
 

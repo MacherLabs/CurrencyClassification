@@ -26,6 +26,18 @@ new_currency_tfrecords/
 test_data.txt
 train_data.txt
 currency_dataset (copy)/
+currency_dataset.zip
+currency_dataset_with_prabhat_images.zip
+currency_dataset_with_prabhat_images/
+mobilenet_80_20_grayscale/
+mobilenet_80_20_grayscale_with_prahabt_images/
+mobilenet_grayscale_complete/
+output_labels.txt
+prabhat_dataset/
+temp_images/
+test.jpg
+test.py
+tfRecord.pyc
 
 
 

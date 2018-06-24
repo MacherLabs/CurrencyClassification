@@ -50,6 +50,7 @@ class Test_Graph(object):
         normalized = tf.divide(tf.subtract(resized, [input_mean]), [input_std])
         sess = tf.Session()
         result = sess.run(normalized)
+        #print(result.max(),result.min())
 
         return result
 
@@ -65,6 +66,7 @@ class Test_Graph(object):
         normalized = tf.divide(tf.subtract(resized, [input_mean]), [input_std])
         sess = tf.Session()
         result = sess.run(normalized)
+
         sess.close()
 
         return result
@@ -84,12 +86,20 @@ class Test_Graph(object):
         top_k = results.argsort()[-5:][::-1]
         for i in top_k:
             print(self.labels[i], results[i])
+        print("\033[F"*6)
+            #print("\r")
+
 
     def predict_accuracy(self,path_to_tfRecord,):
 
         iterator = Read_tf_record().input_fn(path_to_tfRecord, batch_size=4,img_size=224)
         next_set = iterator.get_next()
         img_size = 224
+        TEMP_FOLDER = 'temp_images/'
+        img_paths = []
+        img_accuracies = []
+        img_indices = []
+
         #image = tf.image.resize_images(x,[img_size,img_size])
 
         sess1 = tf.Session()
@@ -101,24 +111,60 @@ class Test_Graph(object):
             no_of_examples += 1
         print('no of  examples', no_of_examples)
         total_sum = 0
+        j = 0
         while (True):
             try:
                 x_batch,y_batch = sess1.run(next_set)
+
                 x_batch = self.read_tensor_from_image_image(x_batch)
 
-                #print(x_batch.shape)
+
 
                 #plt.show(plt.imshow(x_batch[0]))
 
-                predicted = sess2.run(self.output_operation.outputs[0], {
+                predicted = sess2.run(self.output_operation.outputs, {
                 self.input_operation.outputs[0]:x_batch
             })
-                #print(predicted,y_batch)
-                sum = np.sum(np.argmax(predicted, 1) == np.argmax(y_batch, 1))
+                #print("y_batch",y_batch)
 
+                #print("predicted",predicted[0])
+                #print("ans",np.argmax(predicted[0], 1))
+                #print(predicted,y_batch)
+                #print(x_batch.shape)
+                tmp = np.argmax(predicted[0], 1) == np.argmax(y_batch, 1)
+                sum = np.sum(tmp)
+                print(np.argmax(predicted[0], 1))
+
+                ####    To be removed ######
+
+                '''
+                for i in range(4):
+
+                    try:
+
+                        #plt.show(plt.imshow(x_batch[i]))
+                        print(TEMP_FOLDER + str(j) + '.jpg')
+                        plt.show(plt.imshow(x_batch[i]))
+
+                        cv2.imwrite(TEMP_FOLDER+ str(j)+'.jpg',x_batch[i])
+                        img_paths.append(TEMP_FOLDER+ str(j)+'.jpg')
+                        img_accuracies.append(predicted[0][i])
+                        print(np.argmax(predicted[0], 1)[i])
+                        img_accuracies.append(predicted[0][i])
+                        img_indices.append(np.argmax(predicted[0], 1)[i])
+                        j = j + 1
+
+
+                    except:
+                        print("exception")
+                '''
                 total_sum = total_sum + sum
+                print(total_sum)
             except tf.errors.OutOfRangeError:
                 break
+        np.save(TEMP_FOLDER+'paths',img_paths)
+        np.save(TEMP_FOLDER+'accuracies',img_accuracies)
+        np.save(TEMP_FOLDER+'indices', img_indices)
         accuracy = np.float32(total_sum) / np.float32(no_of_examples)
         print('accuracy', 100*accuracy)
 
@@ -146,13 +192,11 @@ class Test_Graph(object):
         bright2 = cv2.addWeighted(image, 1, image, 0, (brightness * 2) * 255)
         contrast1 = cv2.addWeighted(image, 1 + contrast, image, 0, 0)
         contrast2 = cv2.addWeighted(image, 1 + contrast, image, 0, -255 * contrast)
-        normalizedImg = cv2.normalize(image, 0, 255, cv2.NORM_MINMAX)
-        normalizedImg = cv2.resize(normalizedImg,(224,224))
 
 
 
         images = {
-            "original":image,
+
             "plus_20": rot_plus_20,
             "minus_20": rot_minus_20,
             "cropped": cropped,
@@ -162,17 +206,16 @@ class Test_Graph(object):
             "bright2": bright2,
             "contrast1": contrast1,
             "contrast2": contrast2,
-            "normalized": normalizedImg,
         }
 
-        categories = ["original", "plus_20", "minus_20", "cropped", "hor_stretched","bright1","bright2", "ver_stretched","contrast1","contrast2", "normalized"]
+        categories = ["plus_20", "minus_20", "cropped", "hor_stretched", "bright1", "bright2",
+                      "ver_stretched", "contrast1", "contrast2"]
 
         random_index = random.sample(range(1, len(images)), 8)
-        print(random_index)
+        '''
         for index in random_index:
             images[categories[index]] = cv2.cvtColor(images[categories[index]], cv2.COLOR_RGB2GRAY)
-            plt.show(plt.imshow(images[categories[index]]))
-
+        '''
         return images
 
 
@@ -181,30 +224,53 @@ class Test_Graph(object):
 
 if __name__=='__main__':
 
+    graphs = ['/home/pranav/intermediateintermediate_3500.pb' , 'mobilenet_v2_140_new_dataset/output_graph.pb','mobilenet_80_20_grayscale/mobilenet_new_dataset_gray_scale/intermediateintermediate_52500.pb']
+    test = Test_Graph(model_file='/home/pranav/intermediateintermediate_99500.pb')
+    paths = ['currency_fifty_new.tfrecord','currency_five_hundred.tfrecord','currency_hundred.tfrecord'
+             ,'currency_ten.tfrecord','currency_ten_new.tfrecord','currency_twenty.tfrecord','currency_two_hundred.tfrecord'
+             ,'currency_two_thousand.tfrecord']
+    paths2 = ['fifty.tfrecord','fifty new.tfrecord', 'five hundred.tfrecord', 'hundred.tfrecord'
+        , 'ten.tfrecord', 'ten new.tfrecord', 'twenty.tfrecord',
+             'two hundred.tfrecord','two thousand.tfrecord']
 
-    test = Test_Graph(model_file='intermediateintermediate_34500.pb')
+    #test.predict_accuracy(path_to_tfRecord='currency_dataset/currency_hundred.tfrecord')
 
-    #image = test.read_tensor_from_image_file(file_name='/home/pranav/Downloads/twenty2.jpeg')
+    test.predict_accuracy(path_to_tfRecord='./prabhat_dataset/' +'currency_five_hundred.tfrecord')
 
-    categories = ["original", "plus_20", "minus_20", "cropped", "hor_stretched", "bright1", "bright2", "ver_stretched",
-                  "contrast1", "contrast2", "normalized"]
+    '''
+    for path in paths:
+        print("Path",path)
+        test.predict_accuracy(path_to_tfRecord='./prabhat_dataset/'+path)
 
-    image  = cv2.imread('/home/pranav/Downloads/download (5).jpeg')
+
+    #image = test.read_tensor_from_image_file(file_name='prabhat_dataset/hundred/2.png')
+    #print(image.shape)
+
+    image1 = cv2.cvtColor(image[0],cv2.COLOR_RGB2GRAY)
+    image[:,:,:,0] = image1
+    image[:,:,: ,1] = image1
+    image[:,:,:, 2] = image1
+
+    '''
+
+    #categories = ["plus_20", "minus_20", "cropped", "hor_stretched", "bright1", "bright2","ver_stretched", "contrast1", "contrast2"]
+
+
+    #image  = cv2.imread('/home/pranav/Downloads/download (5).jpeg')
     # cv2.imshow('original',image)
 
-    #image  = cv2.resize(image,(224,224))
-    image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
-    plt.show(plt.imshow(image))
+    image = test.read_tensor_from_image_file('/home/pranav/Downloads/ten1.jpeg')
 
-    image = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
-    plt.show(plt.imshow(image))
+
 
 
 
 
     # plt.show(plt.imshow(image))
     #image = np.expand_dims(image,0)
-    #images = test.operation(image)
+    #print(image.shape)
+
+    #images = test.operation(image[0])
 
     #image = test.read_tensor_from_image_image(image=image)
     #image = test.read_tensor_from_image_image(image=dst1)
@@ -221,22 +287,21 @@ if __name__=='__main__':
         plt.show(plt.imshow(images[category]))
 
 
-        images[category] = cv2.cvtColor(images[category], cv2.COLOR_BGR2HSV)
-        #image = test.read_tensor_from_image_image(images[category])
 
-        h, _, _ = cv2.split(images[category])
-        print("h value of image")
-        cv2.imshow('h_'+category, h)
-        cv2.waitKey(5000)
-        #test.predict_currency(image=image)
+        image = test.read_tensor_from_image_image(images[category])
+
+        test.predict_currency(image=image)
         print("\n")
 
 
+
+
+
+
+
     '''
+    plt.show(plt.imshow(image[0]))
 
-    
+    test.predict_currency(image=image)
 
-    #plt.show(plt.imshow(image[0]))
-
-    #test.predict_currency(image=image)
 

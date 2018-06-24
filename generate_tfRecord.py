@@ -6,9 +6,9 @@ import tensorflow as tf
 import sys
 import numpy as np
 import cv2
-directories =['fifty']
+directories =['two hundred']
 
-MAIN_PATH = './currency_dataset/'
+MAIN_PATH = './prabhat_dataset//'
 
 
 i = 0
@@ -57,7 +57,7 @@ def _int64_feature(value):
 def _bytes_feature(value):
   return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
-train_filename = './new_currency_tfrecords/currency_fifty.tfrecord'  # address to save the TFRecords file
+train_filename = './prabhat_dataset/currency_two_hundred.tfrecord'  # address to save the TFRecords file
 # open the TFRecords file
 writer = tf.python_io.TFRecordWriter(train_filename)
 for i in range(len(addrs)):
