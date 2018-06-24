@@ -1,3 +1,4 @@
+Currency classifier.xlsx
 datasets/currency_dataset_copy/
 datasets/dataset/
 training/
@@ -28,6 +29,6 @@ pre_trained_models/model_graphs/
 datasets/prabhat_dataset/
 datasets/temp_images/
 tfRecord.pyc
-Currency classifier.xlsx
+
 
 
