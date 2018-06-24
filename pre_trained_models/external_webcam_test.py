@@ -2,7 +2,8 @@ import cv2
 import random
 import  os
 import numpy as np
-from mobilenet_predictor import  Test_Graph
+
+from pre_trained_models.mobilenet_predictor import  Test_Graph
 cam  = cv2.VideoCapture(2)
 
 
