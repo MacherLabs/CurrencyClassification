@@ -7,7 +7,7 @@ import random
 
 
 class Test_Graph(object):
-    def __init__(self,model_file='./mobilenet_v2_140_new_dataset/output_graph.pb',label_file='./mobilenet_v2_140_new_dataset/output_labels.txt'):
+    def __init__(self,model_file='./mobilenet_v2_140_new_dataset/output_graph.pb',label_file='./model_graphs/output_labels.txt'):
         self.detection_graph = tf.Graph()
         with self.detection_graph.as_default():
             od_graph_def = tf.GraphDef()
@@ -60,6 +60,7 @@ class Test_Graph(object):
                                      input_mean=0,
                                      input_std=255):
 
+        '''
         float_caster = tf.cast(image, tf.float32)
         dims_expander = tf.expand_dims(float_caster, 0)
         resized = tf.image.resize_bilinear(dims_expander, [input_height, input_width])
@@ -68,8 +69,17 @@ class Test_Graph(object):
         result = sess.run(normalized)
 
         sess.close()
+        '''
+        resized = cv2.resize(image, (input_height, input_width))
+        float_caster = resized.astype(np.float32)
+        resized = np.expand_dims(float_caster, 0)
+        result = np.divide(np.subtract(resized, [input_mean]), [input_std])
+
+
+
 
         return result
+
 
 
     def predict_currency(self,image):

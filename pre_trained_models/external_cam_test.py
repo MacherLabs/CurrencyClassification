@@ -2,7 +2,7 @@ import cv2
 import random
 import  os
 import numpy as np
-from pre_trained_models.mobilenet_predictor import  Test_Graph
+from mobilenet_predictor import Test_Graph
 cam  = cv2.VideoCapture(2)
 
 MAIN_INT = random.randint(0,1e6)
