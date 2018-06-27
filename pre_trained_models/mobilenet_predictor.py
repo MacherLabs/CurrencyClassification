@@ -60,20 +60,22 @@ class Test_Graph(object):
                                      input_mean=0,
                                      input_std=255):
 
-        '''
+
         float_caster = tf.cast(image, tf.float32)
-        dims_expander = tf.expand_dims(float_caster, 0)
-        resized = tf.image.resize_bilinear(dims_expander, [input_height, input_width])
+        #dims_expander = tf.expand_dims(float_caster, 0)
+        resized = tf.image.resize_bilinear(float_caster, [input_height, input_width])
         normalized = tf.divide(tf.subtract(resized, [input_mean]), [input_std])
         sess = tf.Session()
         result = sess.run(normalized)
 
         sess.close()
         '''
+
         resized = cv2.resize(image, (input_height, input_width))
         float_caster = resized.astype(np.float32)
         resized = np.expand_dims(float_caster, 0)
         result = np.divide(np.subtract(resized, [input_mean]), [input_std])
+        '''
 
 
 
@@ -100,9 +102,9 @@ class Test_Graph(object):
             #print("\r")
 
 
-    def predict_accuracy(self,path_to_tfRecord,):
+    def predict_accuracy(self,path_to_tfRecord):
 
-        iterator = Read_tf_record().input_fn(path_to_tfRecord, batch_size=4,img_size=224)
+        iterator = Read_tf_record().input_fn(path_to_tfRecord, batch_size=4 ,img_size=224)
         next_set = iterator.get_next()
         img_size = 224
         TEMP_FOLDER = 'temp_images/'
@@ -125,7 +127,7 @@ class Test_Graph(object):
         while (True):
             try:
                 x_batch,y_batch = sess1.run(next_set)
-
+                print(x_batch.shape)
                 x_batch = self.read_tensor_from_image_image(x_batch)
 
 
@@ -147,34 +149,12 @@ class Test_Graph(object):
 
                 ####    To be removed ######
 
-                '''
-                for i in range(4):
 
-                    try:
-
-                        #plt.show(plt.imshow(x_batch[i]))
-                        print(TEMP_FOLDER + str(j) + '.jpg')
-                        plt.show(plt.imshow(x_batch[i]))
-
-                        cv2.imwrite(TEMP_FOLDER+ str(j)+'.jpg',x_batch[i])
-                        img_paths.append(TEMP_FOLDER+ str(j)+'.jpg')
-                        img_accuracies.append(predicted[0][i])
-                        print(np.argmax(predicted[0], 1)[i])
-                        img_accuracies.append(predicted[0][i])
-                        img_indices.append(np.argmax(predicted[0], 1)[i])
-                        j = j + 1
-
-
-                    except:
-                        print("exception")
-                '''
                 total_sum = total_sum + sum
                 print(total_sum)
             except tf.errors.OutOfRangeError:
                 break
-        np.save(TEMP_FOLDER+'paths',img_paths)
-        np.save(TEMP_FOLDER+'accuracies',img_accuracies)
-        np.save(TEMP_FOLDER+'indices', img_indices)
+
         accuracy = np.float32(total_sum) / np.float32(no_of_examples)
         print('accuracy', 100*accuracy)
 
@@ -235,7 +215,7 @@ class Test_Graph(object):
 if __name__=='__main__':
 
     graphs = ['/home/pranav/intermediateintermediate_3500.pb' , 'mobilenet_v2_140_new_dataset/output_graph.pb','mobilenet_80_20_grayscale/mobilenet_new_dataset_gray_scale/intermediateintermediate_52500.pb']
-    test = Test_Graph(model_file='/home/pranav/intermediateintermediate_99500.pb')
+    test = Test_Graph(model_file='./model_graphs/mobilenet_80_20_grayscale_with_prahabt_images/mobilenet_new_dataset_gray_scale2/output_graph.pb')
     paths = ['currency_fifty_new.tfrecord','currency_five_hundred.tfrecord','currency_hundred.tfrecord'
              ,'currency_ten.tfrecord','currency_ten_new.tfrecord','currency_twenty.tfrecord','currency_two_hundred.tfrecord'
              ,'currency_two_thousand.tfrecord']
@@ -243,16 +223,19 @@ if __name__=='__main__':
         , 'ten.tfrecord', 'ten new.tfrecord', 'twenty.tfrecord',
              'two hundred.tfrecord','two thousand.tfrecord']
 
-    #test.predict_accuracy(path_to_tfRecord='currency_dataset/currency_hundred.tfrecord')
+    paths3 = ['Fifty_Old','Fifty_New','Five_Hundred','Hundred','Ten_Old','Ten_new','Twenty','Two_Hundred','Two_Thousand']
 
-    test.predict_accuracy(path_to_tfRecord='./prabhat_dataset/' +'currency_five_hundred.tfrecord')
+
+
+
+    #test.predict_accuracy(path_to_tfRecord='./prabhat_dataset/' +'currency_five_hundred.tfrecord')
+
+
+    for path in paths3:
+        print("Path",path)
+        test.predict_accuracy(path_to_tfRecord='/home/pranav/Downloads/NewDataset/NewDataset/'+path+'.tfrecord')
 
     '''
-    for path in paths:
-        print("Path",path)
-        test.predict_accuracy(path_to_tfRecord='./prabhat_dataset/'+path)
-
-
     #image = test.read_tensor_from_image_file(file_name='prabhat_dataset/hundred/2.png')
     #print(image.shape)
 
@@ -309,9 +292,10 @@ if __name__=='__main__':
 
 
 
-    '''
+
     plt.show(plt.imshow(image[0]))
 
     test.predict_currency(image=image)
 
+    '''
 

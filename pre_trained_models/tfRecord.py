@@ -5,7 +5,7 @@ import os
 import random
 class Write_tf_record(object):
     def get_paths(self,dir,label):
-        MAIN_PATH = './prabhat_dataset/'
+        MAIN_PATH = '/home/pranav/Downloads/NewDataset/NewDataset/'
         directories = dir
 
         datas = []
@@ -143,16 +143,16 @@ class Read_tf_record(object):
         return(iterator)
 
 if(__name__=='__main__'):
-    #dirs = ['fifty','fifty new','five hundred','hundred','ten','ten new','twenty','two hundred','two thousand']
-    dirs = ['five_hundred']
-    #dirs = os.listdir('./currency_dataset/')
+    dirs = ['Fifty_Old','Fifty_New','Five_Hundred','Hundred','Ten_Old','Ten_new','Twenty','Two_Hundred','Two_Thousand']
+    #dirs = ['five_hundred']
+    #dirs = os.listdir('/home/pranav/Downloads/NewDataset/NewDataset/')
 
-    label =2
+    label = 0
     for dir in dirs:
 
         print(dir)
 
         addrs,labels = Write_tf_record().get_paths(dir,label)
         # Write_tf_record().convert(image_paths=addrs,labels=labels,out_path='./new_currency_tfrecords/currency_'+dir+'.tfrecord')
-        Write_tf_record().convert(image_paths=addrs, labels=labels,out_path='./prabhat_dataset/'+dir+'.tfrecord')
+        Write_tf_record().convert(image_paths=addrs, labels=labels,out_path='/home/pranav/Downloads/NewDataset/NewDataset/'+dir+'.tfrecord')
         label = label + 1
