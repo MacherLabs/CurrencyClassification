@@ -2,6 +2,7 @@ Currency classifier.xlsx
 datasets/currency_dataset_copy/
 datasets/dataset/
 training/
+datasets/
 custom_models/test.tfrecord
 custom_models/val.tfrecord
 custom_models/train.tfrecord

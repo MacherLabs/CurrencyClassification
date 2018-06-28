@@ -1,13 +1,24 @@
 import tensorflow as tf
 import numpy as np
 import cv2
-from tfRecord import Read_tf_record
-import matplotlib.pyplot as plt
+from tfRecord import Read_tf_record,Write_tf_record
 import random
 
 
 class Test_Graph(object):
-    def __init__(self,model_file='./mobilenet_v2_140_new_dataset/output_graph.pb',label_file='./model_graphs/output_labels.txt'):
+    def __init__(self, model_file = 'model_graphs/mobilenet_80_20_grayscale_with_prahabt_images/mobilenet_new_dataset_gray_scale2' ,
+                 label_file='./model_graphs/output_labels.txt'):
+
+        self.load_graph(model_file= model_file)
+        self.labels = []
+        proto_as_ascii_lines = tf.gfile.GFile(label_file).readlines()
+        for l in proto_as_ascii_lines:
+            self.labels.append(l.rstrip())
+
+
+
+
+    def load_graph(self, model_file):
         self.detection_graph = tf.Graph()
         with self.detection_graph.as_default():
             od_graph_def = tf.GraphDef()
@@ -15,16 +26,11 @@ class Test_Graph(object):
                 serialized_graph = fid.read()
                 od_graph_def.ParseFromString(serialized_graph)
                 tf.import_graph_def(od_graph_def, name='')
-
-        self.labels = []
-        proto_as_ascii_lines = tf.gfile.GFile(label_file).readlines()
-        for l in proto_as_ascii_lines:
-            self.labels.append(l.rstrip())
-
         input_name = "Placeholder"
         output_name = 'final_result'
         self.input_operation = self.detection_graph.get_operation_by_name(input_name)
         self.output_operation = self.detection_graph.get_operation_by_name(output_name)
+
 
     def read_tensor_from_image_file(self,file_name,
                                     input_height=224,
@@ -102,61 +108,48 @@ class Test_Graph(object):
             #print("\r")
 
 
-    def predict_accuracy(self,path_to_tfRecord):
+    def predict_accuracy(self,path_to_tfRecord = None,label_file = None, out_dir = None ,path_to_folder = None):
 
-        iterator = Read_tf_record().input_fn(path_to_tfRecord, batch_size=4 ,img_size=224)
-        next_set = iterator.get_next()
-        img_size = 224
-        TEMP_FOLDER = 'temp_images/'
-        img_paths = []
-        img_accuracies = []
-        img_indices = []
+        if path_to_folder is not None:
+            path_to_tfRecords =  Write_tf_record().write_tf_record(self, path_to_folder, label_file, out_dir)
 
-        #image = tf.image.resize_images(x,[img_size,img_size])
+        elif(path_to_tfRecord is not None):
+            path_to_tfRecords = [path_to_tfRecord]
 
-        sess1 = tf.Session()
-        sess2 = tf.Session(graph=self.detection_graph)
+        for path_to_tfRecord in path_to_tfRecords:
+            iterator = Read_tf_record().input_fn(path_to_tfRecord, batch_size=4, img_size=224)
+            next_set = iterator.get_next()
 
-        sess1.run(iterator.initializer)
-        no_of_examples = 0
-        for record in tf.python_io.tf_record_iterator(path_to_tfRecord):
-            no_of_examples += 1
-        print('no of  examples', no_of_examples)
-        total_sum = 0
-        j = 0
-        while (True):
-            try:
-                x_batch,y_batch = sess1.run(next_set)
-                print(x_batch.shape)
-                x_batch = self.read_tensor_from_image_image(x_batch)
+            sess1 = tf.Session()
+            sess2 = tf.Session(graph=self.detection_graph)
 
-
-
-                #plt.show(plt.imshow(x_batch[0]))
-
-                predicted = sess2.run(self.output_operation.outputs, {
-                self.input_operation.outputs[0]:x_batch
-            })
-                #print("y_batch",y_batch)
-
-                #print("predicted",predicted[0])
-                #print("ans",np.argmax(predicted[0], 1))
-                #print(predicted,y_batch)
-                #print(x_batch.shape)
-                tmp = np.argmax(predicted[0], 1) == np.argmax(y_batch, 1)
-                sum = np.sum(tmp)
-                print(np.argmax(predicted[0], 1))
-
-                ####    To be removed ######
+            sess1.run(iterator.initializer)
+            no_of_examples = 0
+            for record in tf.python_io.tf_record_iterator(path_to_tfRecord):
+                no_of_examples += 1
+                print('no of  examples', no_of_examples)
+                total_sum = 0
+                j = 0
+                while (True):
+                    try:
+                        x_batch,y_batch = sess1.run(next_set)
+                        print(x_batch.shape)
+                        x_batch = self.read_tensor_from_image_image(x_batch)
+                        predicted = sess2.run(self.output_operation.outputs, {
+                        self.input_operation.outputs[0]:x_batch
+                    })
+                        tmp = np.argmax(predicted[0], 1) == np.argmax(y_batch, 1)
+                        sum = np.sum(tmp)
+                        print(np.argmax(predicted[0], 1))
 
 
-                total_sum = total_sum + sum
-                print(total_sum)
-            except tf.errors.OutOfRangeError:
-                break
 
-        accuracy = np.float32(total_sum) / np.float32(no_of_examples)
-        print('accuracy', 100*accuracy)
+                        total_sum = total_sum + sum
+                    except tf.errors.OutOfRangeError:
+                        break
+
+                accuracy = np.float32(total_sum) / np.float32(no_of_examples)
+                print('accuracy', 100*accuracy)
 
     def operation(self,image, per_cropped=0.2, hor_stretch=1.1, ver_stretch=1.1, rotation=20, brightness=0.1,
                   contrast=0.4):

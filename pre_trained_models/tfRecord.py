@@ -97,6 +97,25 @@ class Write_tf_record(object):
 
                 # Write the serialized data to the TFRecords file.
                 writer.write(serialized)
+    def write_tf_record(self,path_to_folder,label_file,out_dir):
+
+        labels = []
+        proto_as_ascii_lines = tf.gfile.GFile(label_file).readlines()
+        for l in proto_as_ascii_lines:
+            labels.append(l.rstrip())
+
+        label = 0
+        tf_record_paths = []
+        for dir in labels:
+            print(dir)
+            path = os.path.join(path_to_folder,dir)
+
+            addrs, labels = Write_tf_record().get_paths(path, label)
+            Write_tf_record().convert(image_paths=addrs, labels=labels,
+                                      out_path=os.path.join(os.curdir(out_dir),dir) + '.tfrecord')
+            tf_record_paths.append(os.path.join(os.curdir(out_dir),dir) + '.tfrecord')
+            label = label + 1
+        return tf_record_paths
 
 
 class Read_tf_record(object):
@@ -142,12 +161,16 @@ class Read_tf_record(object):
         iterator = dataset.make_initializable_iterator()
         return(iterator)
 
+
+
+
 if(__name__=='__main__'):
     dirs = ['Fifty_Old','Fifty_New','Five_Hundred','Hundred','Ten_Old','Ten_new','Twenty','Two_Hundred','Two_Thousand']
     #dirs = ['five_hundred']
     #dirs = os.listdir('/home/pranav/Downloads/NewDataset/NewDataset/')
 
     label = 0
+
     for dir in dirs:
 
         print(dir)
@@ -156,3 +179,7 @@ if(__name__=='__main__'):
         # Write_tf_record().convert(image_paths=addrs,labels=labels,out_path='./new_currency_tfrecords/currency_'+dir+'.tfrecord')
         Write_tf_record().convert(image_paths=addrs, labels=labels,out_path='/home/pranav/Downloads/NewDataset/NewDataset/'+dir+'.tfrecord')
         label = label + 1
+
+
+
+

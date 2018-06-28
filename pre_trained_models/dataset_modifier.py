@@ -27,6 +27,8 @@ def operation( image, per_cropped=0.2, hor_stretch=1.1, ver_stretch=1.1, rotatio
     contrast1 = cv2.addWeighted(image, 1 + contrast, image, 0, 0)
     contrast2 = cv2.addWeighted(image, 1 + contrast, image, 0, -255 * contrast)
 
+    blur = cv2.blur(cv2.resize(image, (512, 512)), (5, 5))
+
 
     images = {
         "plus_20": rot_plus_20,
@@ -38,19 +40,20 @@ def operation( image, per_cropped=0.2, hor_stretch=1.1, ver_stretch=1.1, rotatio
         "bright2": bright2,
         "contrast1": contrast1,
         "contrast2": contrast2,
+        "blur": blur
         # "normalized": normalizedImg,
     }
 
     categories = [ "plus_20", "minus_20", "cropped", "hor_stretched", "bright1", "bright2", "ver_stretched",
-                  "contrast1", "contrast2", "normalized"]
+                  "contrast1", "contrast2","blur"]
 
-    random_index = random.sample(range(1, len(images)), 5)
+    random_index = random.sample(range(1, len(images)), 8)
     print(random_index)
     for index in random_index:
         images[categories[index]] = cv2.cvtColor(images[categories[index]], cv2.COLOR_BGR2GRAY)
     return images
 
-MAIN_PATH ='./currency_dataset (copy)/'
+MAIN_PATH ='./datasets/currency_dataset_with_prabhat_images_with_camera'
 #dirs  = ['fifty','fifty new','hundred','ten','twenty','two hundred','two thousand']
 dirs = os.listdir(MAIN_PATH)
 print(dirs)
@@ -67,20 +70,20 @@ for dir in dirs:
         img  = cv2.imread(path)
         path, ext = os.path.splitext(path)
 
-        try:
-
-            print(img.shape)
-            images = operation(img)
-            categories = [ "plus_20", "minus_20", "cropped", "hor_stretched", "bright1", "bright2",
-                          "ver_stretched","contrast1", "contrast2"]
-            for category in categories:
+        print(img.shape)
+        images = operation(img)
+        categories = ["plus_20", "minus_20", "cropped", "hor_stretched", "bright1", "bright2", "ver_stretched",
+                       "contrast1", "contrast2", "blur"]
+        for category in categories:
                 img = images[category]
                 path2 = path +'_'+category
                 path2 = path2 +ext
                 print(path2)
                 cv2.imwrite(path2,img)
+        '''
         except:
+            print(path)
             print("exception")
-
+        '''
 
 
