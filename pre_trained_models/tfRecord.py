@@ -113,7 +113,7 @@ class Write_tf_record(object):
             addrs, labels = Write_tf_record().get_paths(path, label)
             Write_tf_record().convert(image_paths=addrs, labels=labels,
                                       out_path=os.path.join(os.curdir(out_dir),dir) + '.tfrecord')
-            tf_record_paths.append(os.path.join(os.curdir(out_dir),dir) + '.tfrecord')
+            tf_record_paths.append(os.path.join(os.curdir(out_dir),dir)  + '.tfrecord')
             label = label + 1
         return tf_record_paths
 

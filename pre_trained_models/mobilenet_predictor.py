@@ -100,7 +100,6 @@ class Test_Graph(object):
                 self.input_operation.outputs[0]: t
             })
         results = np.squeeze(results)
-
         top_k = results.argsort()[-5:][::-1]
         for i in top_k:
             print(self.labels[i], results[i])
@@ -108,48 +107,48 @@ class Test_Graph(object):
             #print("\r")
 
 
-    def predict_accuracy(self,path_to_tfRecord = None,label_file = None, out_dir = None ,path_to_folder = None):
+                def predict_accuracy(self,path_to_tfRecord = None,label_file = None, out_dir = None ,path_to_folder = None):
 
-        if path_to_folder is not None:
-            path_to_tfRecords =  Write_tf_record().write_tf_record(self, path_to_folder, label_file, out_dir)
+                    if path_to_folder is not None:
+                        path_to_tfRecords =  Write_tf_record().write_tf_record(self, path_to_folder, label_file, out_dir)
 
-        elif(path_to_tfRecord is not None):
-            path_to_tfRecords = [path_to_tfRecord]
+                    elif(path_to_tfRecord is not None):
+                        path_to_tfRecords = [path_to_tfRecord]
 
-        for path_to_tfRecord in path_to_tfRecords:
-            iterator = Read_tf_record().input_fn(path_to_tfRecord, batch_size=4, img_size=224)
-            next_set = iterator.get_next()
+                    for path_to_tfRecord in path_to_tfRecords:
+                        iterator = Read_tf_record().input_fn(path_to_tfRecord, batch_size=4, img_size=224)
+                        next_set = iterator.get_next()
 
-            sess1 = tf.Session()
-            sess2 = tf.Session(graph=self.detection_graph)
+                        sess1 = tf.Session()
+                        sess2 = tf.Session(graph=self.detection_graph)
 
-            sess1.run(iterator.initializer)
-            no_of_examples = 0
-            for record in tf.python_io.tf_record_iterator(path_to_tfRecord):
-                no_of_examples += 1
-                print('no of  examples', no_of_examples)
-                total_sum = 0
-                j = 0
-                while (True):
-                    try:
-                        x_batch,y_batch = sess1.run(next_set)
-                        print(x_batch.shape)
-                        x_batch = self.read_tensor_from_image_image(x_batch)
-                        predicted = sess2.run(self.output_operation.outputs, {
-                        self.input_operation.outputs[0]:x_batch
-                    })
-                        tmp = np.argmax(predicted[0], 1) == np.argmax(y_batch, 1)
-                        sum = np.sum(tmp)
-                        print(np.argmax(predicted[0], 1))
+                        sess1.run(iterator.initializer)
+                        no_of_examples = 0
+                        for record in tf.python_io.tf_record_iterator(path_to_tfRecord):
+                            no_of_examples += 1
+                            print('no of  examples', no_of_examples)
+                            total_sum = 0
+                            j = 0
+                            while (True):
+                                try:
+                                    x_batch,y_batch = sess1.run(next_set)
+                                    print(x_batch.shape)
+                                    x_batch = self.read_tensor_from_image_image(x_batch)
+                                    predicted = sess2.run(self.output_operation.outputs, {
+                                    self.input_operation.outputs[0]:x_batch
+                                })
+                                    tmp = np.argmax(predicted[0], 1) == np.argmax(y_batch, 1)
+                                    sum = np.sum(tmp)
+                                    print(np.argmax(predicted[0], 1))
 
 
 
-                        total_sum = total_sum + sum
-                    except tf.errors.OutOfRangeError:
-                        break
+                                    total_sum = total_sum + sum
+                                except tf.errors.OutOfRangeError:
+                                    break
 
-                accuracy = np.float32(total_sum) / np.float32(no_of_examples)
-                print('accuracy', 100*accuracy)
+                            accuracy = np.float32(total_sum) / np.float32(no_of_examples)
+                            print('accuracy', 100*accuracy)
 
     def operation(self,image, per_cropped=0.2, hor_stretch=1.1, ver_stretch=1.1, rotation=20, brightness=0.1,
                   contrast=0.4):

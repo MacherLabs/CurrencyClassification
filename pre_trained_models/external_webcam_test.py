@@ -57,11 +57,13 @@ def read_tensor_from_image_image(image,
 
 
 
+
+
 if __name__=='__main__':
 
-    cap  = common.VideoStream(2,mode='stream').start()
+    cap  = common.VideoStream(0,mode='stream').start()
     # test = Test_Graph(model_file='./model_graphs/mobilenet_v2_140_new_dataset/output_graph.pb')
-    test = Test_Graph(model_file='./model_graphs/mobilenet_80_20_grayscale_with_prahabt_images/mobilenet_new_dataset_gray_scale2/output_graph.pb')
+    test = Test_Graph(model_file='/home/pranav/intermediateintermediate_1500.pb')
     while not cap.stopped:
             frame = cap.read()
             if frame is not None:
