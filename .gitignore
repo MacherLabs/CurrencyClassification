@@ -9,6 +9,9 @@ custom_models/train.tfrecord
 pre_trained_models/mobilenet_v1_100_224/
 pre_trained_models/mobileNetv2/
 .idea/
+currency.mp4
+currency2.mp4
+currency3.mp4
 datasets/currency_dataset_new.zip
 pre_trained_models/training3/
 custom_models/test_data (copy).txt
