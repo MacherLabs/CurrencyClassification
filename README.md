@@ -4,5 +4,4 @@
 
 <p align="center"> <img src="currency1.gif"/> </p>
 <p align="center"> <img src="currency2.gif"/> </p>
-<p align="center"> <img src="currency3.gif"/> </p>
 
