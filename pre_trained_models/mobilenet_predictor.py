@@ -107,7 +107,7 @@ class Test_Graph(object):
             #print("\r")
 
 
-                def predict_accuracy(self,path_to_tfRecord = None,label_file = None, out_dir = None ,path_to_folder = None):
+    def predict_accuracy(self,path_to_tfRecord = None,label_file = None, out_dir = None ,path_to_folder = None):
 
                     if path_to_folder is not None:
                         path_to_tfRecords =  Write_tf_record().write_tf_record(self, path_to_folder, label_file, out_dir)
@@ -290,4 +290,3 @@ if __name__=='__main__':
     test.predict_currency(image=image)
 
     '''
-
